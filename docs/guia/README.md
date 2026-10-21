@@ -7,7 +7,7 @@ funciona. Lê-se por ordem. As decisões técnicas (curtas, em inglês) estão e
 | Passo | Capítulo | Estado |
 | --- | --- | --- |
 | 1 | [Setup do projeto](01-setup.md) | feito |
-| 2 | Esquema da base de dados (primeira migração Flyway) | a seguir |
+| 2 | [Esquema da base de dados](02-esquema.md) | a seguir (escreves tu) |
 | 3 | Adaptadores das lojas (`StoreSource`) e testes com WireMock | por fazer |
 | 4 | Recolha diária (`@Scheduled`, idempotência) | por fazer |
 | 5 | Estatísticas (consultas com `LAG`) e API REST | por fazer |
