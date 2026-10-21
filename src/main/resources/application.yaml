@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: extpulse
+
+  # No datasource here: in development Spring Boot reads the connection from
+  # compose.yaml, and in tests from the Testcontainers container. Production
+  # will set SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD as environment variables.
+
+  jpa:
+    hibernate:
+      # Flyway owns the schema. Hibernate only checks that the entities match it
+      # and fails at startup if they don't.
+      ddl-auto: validate
+    # Close the database session before the HTTP response is written, so lazy
+    # loading can't run hidden queries from a controller.
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          # Store and read timestamps in UTC; convert to Europe/Lisbon only for display.
+          time_zone: UTC
+
+  flyway:
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Only what is safe to show publicly; more after Spring Security is added.
+        include: health,info
