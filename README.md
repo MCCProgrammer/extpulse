@@ -33,7 +33,7 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Build | Maven (through the Maven Wrapper, `./mvnw`) |
 | Store clients | Spring RestClient (JDK HttpClient), jsoup for the Chrome Web Store page |
 | Resilience | Resilience4j (retries with backoff, one request per second per store) |
-| Tests | JUnit 6, Spring Boot Test, Testcontainers, WireMock |
+| Tests | JUnit 6, Spring Boot Test, Testcontainers, WireMock; JaCoCo coverage gate in CI |
 | Local services | Docker Compose |
 | CI | GitHub Actions |
 
