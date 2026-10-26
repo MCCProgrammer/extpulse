@@ -31,6 +31,7 @@
 		<jsoup.version>1.23.2</jsoup.version>
 		<resilience4j.version>2.4.0</resilience4j.version>
 		<springdoc.version>3.1.1</springdoc.version>
+		<jacoco.version>0.8.15</jacoco.version>
 		<wiremock.version>3.13.2</wiremock.version>
 		<!-- Tests against the real stores run only in the weekly live-stores workflow. -->
 		<excludedGroups>live</excludedGroups>
@@ -155,6 +156,70 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<!-- Test coverage: records which lines the tests run, writes a report to
+				     target/site/jacoco and fails the build below the limits in "check". -->
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+					<execution>
+						<!-- Limits a little under today's numbers (lines 94%, branches 78%), so a
+						     real drop fails the build and a one-line change doesn't. -->
+						<id>check</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<rule>
+									<element>BUNDLE</element>
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.85</minimum>
+										</limit>
+										<limit>
+											<counter>BRANCH</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.70</minimum>
+										</limit>
+									</limits>
+								</rule>
+								<rule>
+									<!-- The services hold the rules; each one on its own. -->
+									<element>CLASS</element>
+									<includes>
+										<include>*Service</include>
+									</includes>
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.80</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

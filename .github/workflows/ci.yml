@@ -17,6 +17,35 @@ jobs:
           java-version: '25'
           cache: maven
 
-      # Compiles, runs every test (Testcontainers uses the runner's Docker) and packages the jar.
+      # Compiles, runs every test (Testcontainers uses the runner's Docker), packages the
+      # jar and checks test coverage (JaCoCo; the limits are in pom.xml).
       - name: Build and test
         run: ./mvnw -B verify
+
+      # Coverage in the run's summary page, also when the coverage check failed.
+      - name: Coverage summary
+        if: ${{ !cancelled() && hashFiles('target/site/jacoco/jacoco.csv') != '' }}
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          import csv
+          rows = list(csv.DictReader(open("target/site/jacoco/jacoco.csv")))
+          def total(kind):
+              covered = sum(int(r[kind + "_COVERED"]) for r in rows)
+              missed = sum(int(r[kind + "_MISSED"]) for r in rows)
+              return 100 * covered / (covered + missed), covered, covered + missed
+          print("### Test coverage\n")
+          print("| | Covered | |\n| --- | --- | --- |")
+          for kind, name in (("LINE", "Lines"), ("BRANCH", "Branches")):
+              percent, covered, all_ = total(kind)
+              print(f"| {name} | {percent:.1f}% | {covered} of {all_} |")
+          print("\nLimits: lines 85%, branches 70%, each *Service class 80% of lines.")
+          EOF
+
+      # The HTML report, to download from the run's page and see which lines are missed.
+      - name: Upload coverage report
+        if: ${{ !cancelled() && hashFiles('target/site/jacoco/index.html') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: target/site/jacoco/
+          retention-days: 14

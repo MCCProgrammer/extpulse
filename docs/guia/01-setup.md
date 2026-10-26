@@ -324,7 +324,7 @@ O Maven trabalha por fases, sempre pela mesma ordem. Pedir uma fase corre todas 
 | `test-compile` | Compila `src/test/java` | `test-classes/` |
 | `test` | O plugin Surefire corre as classes `*Tests` e `*Test` | `surefire-reports/` (um relatório por classe) |
 | `package` | Cria o jar e o plugin do Spring Boot torna-o executável | `extpulse-0.0.1-SNAPSHOT.jar` (o original fica como `.jar.original`) |
-| `verify` | Verificações finais (mais tarde: a cobertura do JaCoCo) | — |
+| `verify` | O JaCoCo escreve o relatório de cobertura e falha o build abaixo dos limites (ver [ferramentas.md](ferramentas.md#jacoco)) | `site/jacoco/` (`index.html`, `jacoco.csv`) |
 
 Se um teste falha, o Maven pára na fase `test` e mostra `BUILD FAILURE`. Para saber
 porquê, abre o relatório em `target/surefire-reports/`.
@@ -436,7 +436,9 @@ Porquê testar com um PostgreSQL verdadeiro e não com H2:
 | `actions/checkout@v5` | Descarrega o código do repositório |
 | `actions/setup-java@v5` com `temurin` e `'25'` | Instala o Java 25 (a distribuição Temurin, da Eclipse) |
 | `cache: maven` | Guarda `~/.m2/repository` entre execuções |
-| `./mvnw -B verify` | Compila, corre os testes e cria o jar. `-B` é o modo sem interação, com logs limpos |
+| `./mvnw -B verify` | Compila, corre os testes, cria o jar e verifica a cobertura. `-B` é o modo sem interação, com logs limpos |
+| `Coverage summary` | Escreve a cobertura (linhas e ramos) na página do run, mesmo quando a verificação falhou |
+| `Upload coverage report` | Guarda o relatório HTML do JaCoCo durante 14 dias, para descarregar da página do run |
 
 Se um teste falhar, o commit fica com uma cruz vermelha no GitHub, e o pull request mostra-a.
 
