@@ -154,9 +154,9 @@ e o Spring não a cria. Por isso todo o código fica debaixo de `com.mccprogramm
 | --- | --- | --- |
 | `store` | Os adaptadores das lojas: a interface `StoreSource` e uma classe por loja. O único código que fala com as lojas | 3 |
 | `collection` | A tarefa diária (`@Scheduled`) e o registo de cada recolha | 4 |
-| `stats` | Totais e ganhos calculados a partir das fotografias | 5 |
-| `reviews` | As avaliações de todas as lojas | 6 |
-| `auth` | Contas, login e JWT | 7 |
+| `stats` | Totais e ganhos calculados a partir das fotografias | 6 |
+| `reviews` | As avaliações de todas as lojas | 7 |
+| `auth` | Contas, login e JWT | 5 |
 | `alerts` | Regras de alerta e envio | 8 |
 | `publicpage` | Página pública e badge | 9 |
 

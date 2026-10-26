@@ -82,7 +82,7 @@ ainda não existe.
 ### `users`
 
 - **`password_hash`** e não `password`: nunca se guarda a password, só o resultado de um
-  hash (BCrypt, no passo 7).
+  hash (BCrypt, no passo 5).
 - **Índice único sobre `lower(email)`** em vez de `UNIQUE (email)`: um `UNIQUE` simples
   deixava criar a mesma conta com maiúsculas diferentes.
 

@@ -42,6 +42,12 @@ Do mais antigo para o mais recente.
 | 2026-10-26 | 4 | Resilience4j: 4 tentativas (1 s, 4 s, 16 s) e 1 pedido por segundo a cada loja | Falhas momentâneas não perdem o dia; nenhuma loja é sobrecarregada |
 | 2026-10-26 | 4 | `@Scheduled` às 06:00 em `Europe/Lisbon` e um `Clock` para toda a app | "Hoje" é o dia em Lisboa, também na hora de verão; os testes fixam a hora |
 | 2026-10-26 | 4 | Recolha real das 12 listings na base de dados de desenvolvimento, duas vezes | Prova de ponta a ponta: 12 recolhidas, 0 falhas, 6 s, e 12 fotografias (não 24) depois da segunda execução |
+| 2026-10-26 | — | Ordem dos passos mudada: contas e login passam a ser o passo 5, e o catálogo e as estatísticas o 6 | Tudo em `/api` pertence a uma conta, e nada deve ir para um servidor sem login |
+| 2026-10-26 | 5 | Spring Security como resource server: login devolve um JWT (HS256, 1 h), verificado em cada pedido; sem sessões ([0007](../decisions/0007-accounts-and-jwt.md)) | Stateless: qualquer instância verifica qualquer token. A mesma configuração serviria para tokens do Keycloak ou do Cognito |
+| 2026-10-26 | 5 | Passwords com BCrypt (`DelegatingPasswordEncoder`), máximo 72 bytes; login com a mesma resposta e o mesmo tempo para email desconhecido e password errada | Nunca guardar a password; não revelar que emails têm conta |
+| 2026-10-26 | 5 | Migração `V3`: coluna `role` (`USER`/`ADMIN`); `/api/admin/**` só para `ADMIN` | O endpoint de recolha manual (passo 6) é só para administradores |
+| 2026-10-26 | 5 | Erros em Problem Details (RFC 9457), com a lista dos campos inválidos | Todas as respostas de erro da API no mesmo formato, que é um standard |
+| 2026-10-26 | 5 | 12 testes de API com o MockMvc; experimentado com `curl` na base de dados de desenvolvimento | Registo, conflito, validação, login, token alterado, expirado, de outra chave, regra de admin |
 
 ## Problemas que apareceram
 
@@ -83,6 +89,10 @@ Do mais antigo para o mais recente.
 | Tags do JUnit (`@Tag`) | 6.0 | Separar os testes contra as lojas reais | passo 3 |
 | Resilience4j (retry, ratelimiter) | 2.4.0 | Retries com espera crescente e ritmo por loja | passo 4 |
 | `@Scheduled` e `Clock` | Spring 7.0 / Java 25 | Agendar a recolha diária; "hoje" em Lisboa | passo 4 |
+| Spring Security (resource server) | 7.0 | Regras de acesso; verificar o JWT em cada pedido | passo 5 |
+| JWT com Nimbus JOSE | — | Assinar e ler os tokens de login (HS256) | passo 5 |
+| BCrypt (`DelegatingPasswordEncoder`) | — | Guardar passwords como hash | passo 5 |
+| Problem Details (RFC 9457) | Spring 7.0 | Formato único das respostas de erro | passo 5 |
 | Git, GitHub e `gh` | — | Histórico do código e repositório remoto | passo 1 |
 | ADRs | — | Registar as decisões | passo 1 |
 
@@ -119,7 +129,7 @@ As versões das bibliotecas vêm do Spring Boot 4.1.1. Para as ver: `./mvnw depe
 
 - **O que é:** a parte que recebe pedidos HTTP e os entrega aos teus `@RestController`.
   O Tomcat é o servidor web, que vem dentro do jar.
-- **Porquê:** a API REST do passo 5 e a página pública do passo 9.
+- **Porquê:** a API REST (passos 5 e 6) e a página pública do passo 9.
 - **Alternativa que ficou de fora:** Spring WebFlux (reativo). Mais difícil de ler e de
   testar, e o Web MVC com virtual threads chega para este projeto.
 - **Onde está:** `spring-boot-starter-webmvc` no `pom.xml`. A porta é a 8080 (o valor por omissão).
@@ -131,7 +141,7 @@ As versões das bibliotecas vêm do Spring Boot 4.1.1. Para as ver: `./mvnw depe
   implementação. O Spring Data gera os repositórios a partir de uma interface. O
   HikariCP mantém um conjunto de ligações abertas para não abrir uma por pedido.
 - **Porquê:** é a forma mais comum de aceder a bases de dados em Spring. Consultas
-  difíceis, como a do `LAG` no passo 5, escrevem-se em SQL.
+  difíceis, como a do `LAG` no passo 6, escrevem-se em SQL.
 - **Alternativa que ficou de fora:** só JDBC (`JdbcClient`) ou jOOQ. O `JdbcClient`
   (que vem com o mesmo starter) é usado nos `SchemaTests` do passo 2, porque o JPA ainda
   não tem entidades.
@@ -157,7 +167,8 @@ As versões das bibliotecas vêm do Spring Boot 4.1.1. Para as ver: `./mvnw depe
 - **O que é:** anotações como `@NotBlank` e `@Email` que validam os dados que chegam à API.
 - **Porquê:** rejeitar dados errados à entrada, com um erro claro, antes de chegarem à base de dados.
 - **Onde está:** `spring-boot-starter-validation`.
-- **Em que já ajudou:** ainda não (entra com a API, no passo 5).
+- **Em que já ajudou:** no passo 5, `@Email`, `@NotBlank` e `@Size` nos pedidos de registo
+  e login. Um pedido inválido nem chega ao serviço: volta 400 com a lista dos campos errados.
 
 ### Maven e o Maven Wrapper
 
@@ -329,6 +340,62 @@ As versões das bibliotecas vêm do Spring Boot 4.1.1. Para as ver: `./mvnw depe
   às 06:00 UTC no inverno, e que uma recolha às 23:30 UTC de 15 de julho fica com o dia 16.
   Para experimentar, `EXTPULSE_COLLECTION_CRON='0 * * * * *'` pôs a recolha a correr a cada minuto.
 
+### Spring Security (como resource server)
+
+- **O que é:** o framework de segurança do Spring. Uma cadeia de filtros corre antes
+  dos controllers e decide quem pode fazer o quê. Em modo "resource server", lê o
+  `Authorization: Bearer <token>`, verifica o JWT e põe o utilizador no contexto.
+- **Porquê:** é o standard em Spring, e a configuração de resource server é a mesma que
+  se usa com o Keycloak, o Auth0 ou o AWS Cognito.
+- **Alternativa que ficou de fora:** sessões com cookie (precisam de CSRF e de sessões
+  partilhadas entre servidores); um fornecedor de identidade externo (um segundo
+  sistema para manter, para uma só app).
+- **Onde está:** `SecurityConfiguration.java` (regras, `PasswordEncoder`, `JwtEncoder`,
+  `JwtDecoder`); `spring-boot-starter-security-oauth2-resource-server` no `pom.xml`.
+- **Em que já ajudou:** `/api/me` sem token dá 401; um token alterado, expirado ou de
+  outra chave dá 401; `/api/admin/**` com um token de `USER` dá 403. Tudo testado, e tudo
+  sem uma linha de código nos controllers.
+
+### JWT (com o Nimbus JOSE)
+
+- **O que é:** um token assinado com três partes em base64 (`cabeçalho.dados.assinatura`).
+  Os dados leem-se, mas não se alteram sem a chave. O Nimbus é a biblioteca que o
+  Spring Security usa para os criar e verificar.
+- **Porquê:** o login fica sem estado no servidor, e qualquer instância verifica
+  qualquer token.
+- **Alternativa que ficou de fora:** RS256 com um par de chaves (precisa-se quando outros
+  serviços verificam tokens sem os poderem emitir); tokens opacos guardados na base de dados.
+- **Onde está:** `TokenService.java` (emite), `SecurityConfiguration.java` (verifica com
+  assinatura, validade e emissor); a chave em `EXTPULSE_AUTH_JWT_SECRET`.
+- **Em que já ajudou:** os testes criam tokens expirados ou de administrador com o mesmo
+  `TokenService` e um `Clock` fixo, sem truques.
+
+### BCrypt e o `DelegatingPasswordEncoder`
+
+- **O que é:** o BCrypt é uma função de hash para passwords, lenta de propósito e com
+  "sal" aleatório. O `DelegatingPasswordEncoder` guarda o algoritmo como prefixo
+  (`{bcrypt}$2a$10$...`).
+- **Porquê:** uma base de dados roubada não deve revelar passwords. Um hash rápido
+  (SHA-256) deixava testar milhares de milhões de passwords por segundo.
+- **Alternativa que ficou de fora:** Argon2 (mais recente e mais forte, mas o BCrypt é o
+  que vem por omissão no Spring e chega aqui). Graças ao prefixo, mudar depois não
+  invalida as passwords antigas.
+- **Onde está:** `SecurityConfiguration.passwordEncoder()` e `AccountService`.
+- **Em que já ajudou:** um teste confirma que a base de dados tem `{bcrypt}$2...` e
+  nunca a password. Outro confirma que uma password de mais de 72 bytes é recusada,
+  em vez de ser cortada sem aviso.
+
+### Problem Details (RFC 9457)
+
+- **O que é:** um formato standard para erros de APIs HTTP: `type`, `title`, `status`,
+  `detail`, `instance`, mais campos próprios, com `Content-Type: application/problem+json`.
+- **Porquê:** um cliente trata todos os erros da mesma forma, e não há um formato
+  inventado por nós.
+- **Onde está:** `ApiExceptionHandler.java` (junta `errors` com os campos inválidos); as
+  exceções do `AccountService` estendem `ErrorResponseException`.
+- **Em que já ajudou:** os erros de registo (400 com os campos, 409) e de login (401)
+  saem no mesmo formato sem código de tratamento em cada controller.
+
 ### Git, GitHub e `gh`
 
 - **O que é:** o Git guarda o histórico. O GitHub guarda o repositório remoto. O `gh` é a
@@ -352,9 +419,8 @@ Do documento do projeto, por passo. Cada ferramenta ganha a sua ficha quando ent
 | Ferramenta | Para quê | Passo |
 | --- | --- | --- |
 | ShedLock | Só uma instância a recolher, quando houver mais do que um servidor | deploy |
-| springdoc-openapi | Swagger gerado a partir do código | 5 |
-| JaCoCo | Cobertura de testes na CI | 5 |
-| Spring Security + JWT | Contas e login | 7 |
+| springdoc-openapi | Swagger gerado a partir do código | 6 |
+| JaCoCo | Cobertura de testes na CI | 6 |
 | Spring Mail | Alertas e resumo semanal por email | 8 |
 | Render ou Fly.io | Deploy da v1 | 10 |
 | AWS (ECR, ECS Fargate, RDS, SES) | Deploy da v2 | v2 |
