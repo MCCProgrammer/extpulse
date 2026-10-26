@@ -54,6 +54,7 @@ Do mais antigo para o mais recente.
 | 2026-10-26 | 6 | `POST /api/admin/collect` e Swagger (springdoc 3.1.1) | Recolher à mão; documentação da API gerada do código |
 | 2026-10-26 | 6 | Um só PostgreSQL para todos os testes | 3 contentores passaram a 1; obrigou cada teste a limpar antes de começar |
 | 2026-10-26 | 6 | 21 testes novos (80 no total); experimentado com os dados reais e a descoberta real do publisher PKief | Total combinado das 7 extensões, recolha manual 12/12, nomes repetidos distinguidos pela chave |
+| 2026-10-26 | — | JaCoCo 0.8.15: o build falha abaixo de 85% das linhas, 70% dos ramos ou 80% das linhas de qualquer `*Service`; a CI mostra a cobertura e guarda o relatório | Medido antes: 93,8% das linhas e 78,2% dos ramos. Os limites ficam um pouco abaixo, para apanhar uma descida real |
 
 ## Problemas que apareceram
 
@@ -101,6 +102,7 @@ Do mais antigo para o mais recente.
 | BCrypt (`DelegatingPasswordEncoder`) | — | Guardar passwords como hash | passo 5 |
 | Problem Details (RFC 9457) | Spring 7.0 | Formato único das respostas de erro | passo 5 |
 | springdoc-openapi (Swagger) | 3.1.1 | Documentação da API gerada dos controllers | passo 6 |
+| JaCoCo | 0.8.15 | Cobertura de testes, com limite mínimo no build | depois do passo 6 |
 | Funções de janela do PostgreSQL (`LAG`, `FILTER`, `LATERAL`) | 17 | Estatísticas calculadas na base de dados | passo 6 |
 | Git, GitHub e `gh` | — | Histórico do código e repositório remoto | passo 1 |
 | ADRs | — | Registar as decisões | passo 1 |
@@ -432,6 +434,27 @@ As versões das bibliotecas vêm do Spring Boot 4.1.1. Para as ver: `./mvnw depe
 - **Em que já ajudou:** com o `LAG` pelo total em vez de por listing, o teste falha com
   um ganho de 495 que não existiu. É a prova de que o `PARTITION BY` é necessário.
 
+### JaCoCo
+
+- **O que é:** mede que linhas e ramos (cada lado de um `if`) os testes correm. Um
+  agente Java regista isso enquanto os testes correm; depois escreve um relatório e
+  pode falhar o build abaixo de um limite.
+- **Porquê:** uma barreira na CI impede que código novo entre sem testes. Cobertura
+  alta não prova que os testes são bons (por isso este projeto também parte o código de
+  propósito para ver os testes falhar), mas cobertura baixa prova que falta testar.
+- **Alternativa que ficou de fora:** SonarCloud (análise de qualidade mais completa, que
+  também lê o relatório do JaCoCo; fica para quando o repositório for público); só
+  o relatório, sem limite (ninguém o lê).
+- **Onde está:** `jacoco-maven-plugin` no `pom.xml`, com três execuções:
+  `prepare-agent` (antes dos testes), `report` e `check` (na fase `verify`). Os limites
+  são 85% das linhas e 70% dos ramos no projeto, e 80% das linhas em cada classe
+  `*Service`. Na CI, o passo `Coverage summary` mostra os números na página do run e o
+  `Upload coverage report` guarda o HTML. Em local: `target/site/jacoco/index.html`.
+- **Em que já ajudou:** a primeira medição mostrou 93,8% das linhas e 78,2% dos ramos.
+  A classe com menos é o `ExtpulseApplication` (o `main` não corre nos testes), e o
+  serviço com menos é o `CatalogService` (85%). Com o limite dos serviços a 99%, o
+  build falha com `Coverage checks have not been met`.
+
 ### Git, GitHub e `gh`
 
 - **O que é:** o Git guarda o histórico. O GitHub guarda o repositório remoto. O `gh` é a
@@ -455,7 +478,6 @@ Do documento do projeto, por passo. Cada ferramenta ganha a sua ficha quando ent
 | Ferramenta | Para quê | Passo |
 | --- | --- | --- |
 | ShedLock | Só uma instância a recolher, quando houver mais do que um servidor | deploy |
-| JaCoCo | Cobertura de testes na CI (mínimo de 70% nos serviços) | antes do deploy |
 | Spring Mail | Alertas e resumo semanal por email | 8 |
 | Render ou Fly.io | Deploy da v1 | 10 |
 | AWS (ECR, ECS Fargate, RDS, SES) | Deploy da v2 | v2 |
