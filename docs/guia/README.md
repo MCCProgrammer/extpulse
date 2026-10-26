@@ -11,8 +11,8 @@ os problemas que apareceram e uma ficha por ferramenta. Atualiza-se no fim de ca
 | --- | --- | --- |
 | 1 | [Setup do projeto](01-setup.md) | feito |
 | 2 | [Esquema da base de dados](02-esquema.md) | feito |
-| 3 | Adaptadores das lojas (`StoreSource`) e testes com WireMock | a seguir |
-| 4 | Recolha diária (`@Scheduled`, idempotência) | por fazer |
+| 3 | [Adaptadores das lojas](03-lojas.md) | feito |
+| 4 | Recolha diária (`@Scheduled`, idempotência) | a seguir |
 | 5 | Estatísticas (consultas com `LAG`) e API REST | por fazer |
 | 6 | Avaliações | por fazer |
 | 7 | Contas e login (Spring Security, JWT) | por fazer |
