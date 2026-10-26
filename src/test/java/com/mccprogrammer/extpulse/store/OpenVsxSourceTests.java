@@ -33,7 +33,8 @@ class OpenVsxSourceTests {
 		}
 
 		assertThat(this.source.discover("MCCProgrammer")).hasSize(5)
-			.contains(new DiscoveredListing(Store.OPEN_VSX, "MCCProgrammer/diff-checker", "Diff Checker",
+			.contains(new DiscoveredListing(Store.OPEN_VSX, "MCCProgrammer/diff-checker", "mccprogrammer.diff-checker",
+					"Diff Checker",
 					openVsx.baseUrl() + "/extension/MCCProgrammer/diff-checker"));
 	}
 

@@ -36,7 +36,8 @@ class MarketplaceSourceTests {
 		stubQuery(18, "MCCProgrammer", "marketplace/publisher-MCCProgrammer.json");
 
 		assertThat(this.source.discover("MCCProgrammer")).hasSize(5)
-			.contains(new DiscoveredListing(Store.VS_MARKETPLACE, "MCCProgrammer.diff-checker", "Diff Checker",
+			.contains(new DiscoveredListing(Store.VS_MARKETPLACE, "MCCProgrammer.diff-checker",
+					"mccprogrammer.diff-checker", "Diff Checker",
 					marketplace.baseUrl() + "/items?itemName=MCCProgrammer.diff-checker"));
 	}
 

@@ -13,3 +13,4 @@ changes gets a new record that replaces the old one.
 | [0005](0005-store-adapters.md) | Store adapters, and reading the Chrome Web Store page |
 | [0006](0006-daily-collection.md) | The daily collection: idempotent, isolated failures, retries and pacing |
 | [0007](0007-accounts-and-jwt.md) | Accounts and stateless login with self-issued JWTs |
+| [0008](0008-catalog-and-stats.md) | The catalog API and how stats are computed |

@@ -53,6 +53,7 @@ class OpenVsxSource implements StoreSource {
 				.stream()
 				.map(name -> extension(publisher, name))
 				.map(extension -> new DiscoveredListing(store(), extension.namespace() + "/" + extension.name(),
+						DiscoveredListing.vsCodeExtensionKey(extension.namespace(), extension.name()),
 						extension.displayName(),
 						this.baseUrl + "/extension/" + extension.namespace() + "/" + extension.name()))
 				.toList();
