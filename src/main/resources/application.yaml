@@ -24,6 +24,18 @@ spring:
     locations: classpath:db/migration
 
 extpulse:
+  # The time zone of "a day": snapshot dates and schedules. Timestamps stay in UTC.
+  zone: Europe/Lisbon
+
+  collection:
+    # Every day at 06:00 in extpulse.zone. "-" turns it off.
+    cron: "0 0 6 * * *"
+    # One attempt and up to three retries, waiting 1 s, 4 s and 16 s.
+    attempts: 4
+    first-retry-wait: 1s
+    # At most one request per second to each store, so none of them blocks us.
+    min-interval-per-store: 1s
+
   stores:
     marketplace-url: https://marketplace.visualstudio.com
     open-vsx-url: https://open-vsx.org
