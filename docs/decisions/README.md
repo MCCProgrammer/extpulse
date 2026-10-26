@@ -12,3 +12,4 @@ changes gets a new record that replaces the old one.
 | [0004](0004-docker-compose-and-testcontainers.md) | Docker Compose for development, Testcontainers for tests |
 | [0005](0005-store-adapters.md) | Store adapters, and reading the Chrome Web Store page |
 | [0006](0006-daily-collection.md) | The daily collection: idempotent, isolated failures, retries and pacing |
+| [0007](0007-accounts-and-jwt.md) | Accounts and stateless login with self-issued JWTs |

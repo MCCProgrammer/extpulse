@@ -27,6 +27,13 @@ extpulse:
   # The time zone of "a day": snapshot dates and schedules. Timestamps stay in UTC.
   zone: Europe/Lisbon
 
+  auth:
+    # The HMAC key that signs login tokens, at least 32 bytes. Production sets it with
+    # EXTPULSE_AUTH_JWT_SECRET. Left empty, a random key is made at startup, so tokens
+    # stop working when the app restarts; fine in development, never in production.
+    jwt-secret: ""
+    token-validity: 1h
+
   collection:
     # Every day at 06:00 in extpulse.zone. "-" turns it off.
     cron: "0 0 6 * * *"
