@@ -35,6 +35,7 @@ class LiveStoreTests {
 
 		assertThat(listings).extracting(DiscoveredListing::externalId).contains("MCCProgrammer.diff-checker");
 		assertThat(this.marketplace.fetchStats("MCCProgrammer.diff-checker").installs()).isPositive();
+		assertThat(this.marketplace.fetchReviews("MCCProgrammer.diff-checker")).isNotEmpty();
 	}
 
 	@Test
@@ -43,6 +44,7 @@ class LiveStoreTests {
 
 		assertThat(listings).extracting(DiscoveredListing::externalId).contains("MCCProgrammer/diff-checker");
 		assertThat(this.openVsx.fetchStats("MCCProgrammer/diff-checker").installs()).isPositive();
+		assertThat(this.openVsx.fetchReviews("redhat/java")).isNotEmpty();
 	}
 
 	@Test

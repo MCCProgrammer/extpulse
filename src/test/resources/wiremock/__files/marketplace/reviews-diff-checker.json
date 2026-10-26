@@ -1,0 +1,26 @@
+{
+ "reviews": [
+  {
+   "id": 326941,
+   "userId": "00000000-0000-0000-0000-000000000001",
+   "userDisplayName": "Reviewer 1",
+   "updatedDate": "2026-01-29T15:11:13.57Z",
+   "rating": 1,
+   "text": "Does not work for me. Does not highlight the difference in a way that makes any sense to me. All I want is to know the difference so expect the differences to be highlight with a highlight colour - what I see is some faint hard to see box",
+   "productVersion": "0.1.1",
+   "isDeleted": false,
+   "isIgnored": false,
+   "reply": {
+    "id": 36493,
+    "reviewId": 326941,
+    "userId": "00000000-0000-0000-0000-999999999999",
+    "replyText": "Hi,\n\nThanks for your feedback — I understand what you mean about the differences being hard to see. Since the extension was originally using VS Code’s built-in diff view, the highlighting could indeed feel a bit faint and not very intuitive.\n\nBased on your suggestion, I’ve made some improvements and just released version 0.2.0. You can now view the differences directly in the panel with much clearer highlighting, making them easier to understand at a glance. I’ve also fixed a few bugs and improved overall usability. For those who prefer it, the original VS Code diff view is still available and integrated.\n\nIf you notice anything else that could be improved or run into any issues, feel free to let me know — I’d really appreciate it.\n\nThanks again for your feedback,\nMCCprogrammer",
+    "updatedDate": "2026-03-18T17:55:33.39Z",
+    "isDeleted": false
+   },
+   "reCaptchaToken": null
+  }
+ ],
+ "totalReviewCount": 1,
+ "hasMoreReviews": false
+}

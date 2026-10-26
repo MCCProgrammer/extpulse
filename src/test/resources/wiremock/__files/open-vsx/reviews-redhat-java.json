@@ -1,0 +1,150 @@
+{
+ "deleteUrl": "https://open-vsx.org/api/redhat/java/review/delete",
+ "postUrl": "https://open-vsx.org/api/redhat/java/review",
+ "reviews": [
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2020-04-24T12:49:42.939089Z",
+   "user": {
+    "loginName": "reviewer1",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2020-08-08T19:14:31.750799Z",
+   "user": {
+    "loginName": "reviewer2",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2021-11-11T04:16:06.268737Z",
+   "user": {
+    "loginName": "reviewer3",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2022-03-18T06:19:48.457806Z",
+   "user": {
+    "loginName": "reviewer4",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "Great!",
+   "rating": 5,
+   "timestamp": "2022-11-18T12:48:26.736949Z",
+   "user": {
+    "loginName": "reviewer5",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2023-06-13T19:58:40.097890Z",
+   "user": {
+    "loginName": "reviewer6",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2023-08-19T04:42:48.025187Z",
+   "user": {
+    "loginName": "reviewer7",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2023-09-20T10:38:57.671217Z",
+   "user": {
+    "loginName": "reviewer8",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "🐮",
+   "rating": 5,
+   "timestamp": "2024-03-26T09:09:27.429350Z",
+   "user": {
+    "loginName": "reviewer9",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2024-04-26T17:47:52.309407Z",
+   "user": {
+    "loginName": "reviewer10",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2025-07-01T20:00:17.419415Z",
+   "user": {
+    "loginName": "reviewer11",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2025-10-04T17:26:46.103760Z",
+   "user": {
+    "loginName": "reviewer12",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2025-10-10T20:36:01.744465Z",
+   "user": {
+    "loginName": "reviewer13",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2025-10-21T02:54:27.235635Z",
+   "user": {
+    "loginName": "reviewer14",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "Working great!",
+   "rating": 5,
+   "timestamp": "2025-10-26T16:59:24.979509Z",
+   "user": {
+    "loginName": "reviewer15",
+    "provider": "github"
+   }
+  },
+  {
+   "comment": "",
+   "rating": 5,
+   "timestamp": "2026-01-23T15:36:47.327443Z",
+   "user": {
+    "loginName": "reviewer16",
+    "provider": "github"
+   }
+  }
+ ]
+}

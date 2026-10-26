@@ -1,6 +1,8 @@
 package com.mccprogrammer.extpulse.store;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,6 +84,33 @@ class OpenVsxSourceTests {
 		assertThatThrownBy(() -> this.source.fetchStats("MCCProgrammer/diff-checker"))
 			.isInstanceOf(StoreException.class)
 			.isNotInstanceOf(ListingNotFoundException.class);
+	}
+
+	@Test
+	void readsReviewsKeyedByTheirAuthor() {
+		stub("/api/redhat/java/reviews", 200, "open-vsx/reviews-redhat-java.json");
+
+		List<StoreReview> reviews = this.source.fetchReviews("redhat/java");
+
+		assertThat(reviews).hasSize(16);
+		assertThat(reviews.getFirst()).isEqualTo(new StoreReview("github:reviewer1", 5, null, "reviewer1", null,
+				Instant.parse("2020-04-24T12:49:42.939089Z"), null));
+		assertThat(reviews).filteredOn((review) -> review.text() != null).hasSize(3);
+	}
+
+	@Test
+	void anExtensionWithoutReviewsHasNone() {
+		stub("/api/MCCProgrammer/diff-checker/reviews", 200, "open-vsx/reviews-MCCProgrammer-diff-checker.json");
+
+		assertThat(this.source.fetchReviews("MCCProgrammer/diff-checker")).isEmpty();
+	}
+
+	@Test
+	void reviewsOfAnUnknownExtensionAreNotFound() {
+		stub("/api/MCCProgrammer/does-not-exist/reviews", 404, "open-vsx/not-found.json");
+
+		assertThatThrownBy(() -> this.source.fetchReviews("MCCProgrammer/does-not-exist"))
+			.isInstanceOf(ListingNotFoundException.class);
 	}
 
 	private void stub(String path, int status, String bodyFile) {

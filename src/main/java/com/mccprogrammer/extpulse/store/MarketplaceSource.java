@@ -1,6 +1,7 @@
 package com.mccprogrammer.extpulse.store;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -37,6 +39,9 @@ class MarketplaceSource implements StoreSource {
 
 	// Enough for any publisher we know of; paging comes when one has more.
 	private static final int PUBLISHER_PAGE_SIZE = 100;
+
+	// The newest reviews first. The default filter: 1 would leave out ratings without text.
+	private static final int REVIEWS_PAGE_SIZE = 100;
 
 	private final RestClient http;
 
@@ -75,6 +80,43 @@ class MarketplaceSource implements StoreSource {
 				? BigDecimal.valueOf(extension.statistic("averagerating")) : null;
 		return new ListingStats(extension.statisticOrZero("install"), ratingAvg,
 				(int) extension.statisticOrZero("ratingcount"), extension.latestVersion());
+	}
+
+	@Override
+	public List<StoreReview> fetchReviews(String externalId) {
+		int dot = externalId.indexOf('.');
+		if (dot <= 0 || dot == externalId.length() - 1) {
+			throw new IllegalArgumentException("Not a Marketplace ID (publisher.name): " + externalId);
+		}
+		Reviews reviews;
+		try {
+			reviews = this.http.get()
+					.uri("/_apis/public/gallery/publishers/{publisher}/extensions/{name}/reviews?count={count}",
+							externalId.substring(0, dot), externalId.substring(dot + 1), REVIEWS_PAGE_SIZE)
+					.header(HttpHeaders.ACCEPT, API_VERSION)
+					.retrieve()
+					.body(Reviews.class);
+		}
+		catch (HttpClientErrorException.NotFound ex) {
+			throw new ListingNotFoundException(store(), externalId);
+		}
+		catch (RestClientException ex) {
+			throw new StoreException(store(), "reviews of " + externalId + " failed", ex);
+		}
+		if (reviews == null || reviews.reviews() == null) {
+			return List.of();
+		}
+		return reviews.reviews()
+				.stream()
+				.filter((review) -> !review.isDeleted() && !review.isIgnored())
+				.map((review) -> new StoreReview(String.valueOf(review.id()), review.rating(), blankToNull(review.text()),
+						review.userDisplayName(), review.productVersion(), review.updatedDate(),
+						(review.reply() != null && !review.reply().isDeleted()) ? review.reply().replyText() : null))
+				.toList();
+	}
+
+	private static String blankToNull(String text) {
+		return (text == null || text.isBlank()) ? null : text;
 	}
 
 	private List<Extension> query(int filterType, String value, int pageSize) {
@@ -145,6 +187,19 @@ class MarketplaceSource implements StoreSource {
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	record Publisher(String publisherName) {
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	record Reviews(List<Review> reviews) {
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	record Review(long id, String userDisplayName, Instant updatedDate, int rating, String text, String productVersion,
+			boolean isDeleted, boolean isIgnored, Reply reply) {
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	record Reply(String replyText, boolean isDeleted) {
 	}
 
 	@JsonIgnoreProperties(ignoreUnknown = true)

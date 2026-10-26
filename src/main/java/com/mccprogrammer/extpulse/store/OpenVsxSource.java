@@ -1,6 +1,7 @@
 package com.mccprogrammer.extpulse.store;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -61,15 +62,51 @@ class OpenVsxSource implements StoreSource {
 
 	@Override
 	public ListingStats fetchStats(String externalId) {
-		String[] parts = externalId.split("/", -1);
-		if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
-			throw new IllegalArgumentException("Not an Open VSX ID (namespace/name): " + externalId);
-		}
+		String[] parts = namespaceAndName(externalId);
 		Extension extension = extension(parts[0], parts[1]);
 		BigDecimal ratingAvg = (extension.averageRating() != null) ? BigDecimal.valueOf(extension.averageRating())
 				: null;
 		return new ListingStats(orZero(extension.downloadCount()), ratingAvg,
 				(int) orZero(extension.reviewCount()), extension.version());
+	}
+
+	/**
+	 * Open VSX reviews have no ID, and a user can leave one review per extension, so the
+	 * author ({@code github:login}) identifies the review. There are no publisher replies.
+	 */
+	@Override
+	public List<StoreReview> fetchReviews(String externalId) {
+		String[] parts = namespaceAndName(externalId);
+		Reviews reviews;
+		try {
+			reviews = this.http.get()
+					.uri("/api/{namespace}/{name}/reviews", parts[0], parts[1])
+					.retrieve()
+					.body(Reviews.class);
+		}
+		catch (HttpClientErrorException.NotFound ex) {
+			throw new ListingNotFoundException(store(), externalId);
+		}
+		catch (RestClientException ex) {
+			throw new StoreException(store(), "reviews of " + externalId + " failed", ex);
+		}
+		if (reviews == null || reviews.reviews() == null) {
+			return List.of();
+		}
+		return reviews.reviews()
+				.stream()
+				.map((review) -> new StoreReview(review.user().provider() + ":" + review.user().loginName(),
+						review.rating(), (review.comment() == null || review.comment().isBlank()) ? null : review.comment(),
+						review.user().loginName(), null, review.timestamp(), null))
+				.toList();
+	}
+
+	private static String[] namespaceAndName(String externalId) {
+		String[] parts = externalId.split("/", -1);
+		if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
+			throw new IllegalArgumentException("Not an Open VSX ID (namespace/name): " + externalId);
+		}
+		return parts;
 	}
 
 	private Extension extension(String namespace, String name) {
@@ -98,6 +135,18 @@ class OpenVsxSource implements StoreSource {
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	record Namespace(Map<String, String> extensions) {
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	record Reviews(List<Review> reviews) {
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	record Review(String comment, int rating, Instant timestamp, User user) {
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	record User(String loginName, String provider) {
 	}
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
