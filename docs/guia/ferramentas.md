@@ -48,6 +48,12 @@ Do mais antigo para o mais recente.
 | 2026-10-26 | 5 | Migração `V3`: coluna `role` (`USER`/`ADMIN`); `/api/admin/**` só para `ADMIN` | O endpoint de recolha manual (passo 6) é só para administradores |
 | 2026-10-26 | 5 | Erros em Problem Details (RFC 9457), com a lista dos campos inválidos | Todas as respostas de erro da API no mesmo formato, que é um standard |
 | 2026-10-26 | 5 | 12 testes de API com o MockMvc; experimentado com `curl` na base de dados de desenvolvimento | Registo, conflito, validação, login, token alterado, expirado, de outra chave, regra de admin |
+| 2026-10-26 | 6 | `POST /api/publishers`: descoberta em todas as lojas, agrupada pela chave da extensão; lojas chamadas antes da transação, e nada gravado se uma falhar | Um pedido junta tudo; nunca um catálogo a meio |
+| 2026-10-26 | 6 | Extensões e listings à mão (`POST /api/extensions`, `.../listings`), com a listing verificada na loja | As extensões do Chrome não se encontram por publisher |
+| 2026-10-26 | 6 | Estatísticas em SQL: último número conhecido nos dias em falta (`JOIN LATERAL`), ganho por listing (`LAG ... PARTITION BY`), por loja (`FILTER`), semanas ISO ([0008](../decisions/0008-catalog-and-stats.md)) | Os totais não caem quando uma loja falha, e uma listing nova não aparece como "ganho" |
+| 2026-10-26 | 6 | `POST /api/admin/collect` e Swagger (springdoc 3.1.1) | Recolher à mão; documentação da API gerada do código |
+| 2026-10-26 | 6 | Um só PostgreSQL para todos os testes | 3 contentores passaram a 1; obrigou cada teste a limpar antes de começar |
+| 2026-10-26 | 6 | 21 testes novos (80 no total); experimentado com os dados reais e a descoberta real do publisher PKief | Total combinado das 7 extensões, recolha manual 12/12, nomes repetidos distinguidos pela chave |
 
 ## Problemas que apareceram
 
@@ -62,6 +68,7 @@ Do mais antigo para o mais recente.
 | O teste `live` do Chrome falhou com `Illegal character in path` (passo 3) | A loja redireciona para `/detail/director’s-cut-for-letter/{id}` com UTF-8 cru no cabeçalho `Location`; o JDK lê-o como ISO-8859-1 | O adaptador segue os redirecionamentos e codifica o URL (`%E2%80%99`) | As respostas gravadas não mostram tudo. Um teste contra o sistema real apanha o que elas escondem |
 | O PR #2 entrou no branch do passo 2 e não no `main` (passo 3) | O PR #2 tinha base em `feat/core-schema`. O GitHub só muda a base para `main` se o branch do PR anterior for apagado no merge, o que não está ligado neste repositório | PR #3 do `feat/store-adapters` para o `main`. Daqui em diante, todos os PRs com base no `main` | Um PR "empilhado" sobre outro é frágil. Com base no `main`, mostra os commits do anterior até esse ter merge, e mais nada |
 | `--extpulse.collection.cron=0 * * * * *` chegou à app como `"0"` (passo 4) | O `-Dspring-boot.run.arguments` do plugin do Maven parte os argumentos nos espaços | Passar por variável de ambiente: `EXTPULSE_COLLECTION_CRON='0 * * * * *'` | O Spring Boot lê variáveis de ambiente (`EXTPULSE_COLLECTION_CRON` = `extpulse.collection.cron`), e é assim que a produção recebe configuração |
+| `SchemaTests` falhou 8 vezes com `duplicate key users_email_lower_key` (passo 6) | Com um só PostgreSQL para todos os testes, encontrou contas gravadas por outras classes de teste | Cada teste apaga o que precisa antes de começar | Um teste não pode assumir uma base de dados vazia. Contentores separados escondiam isso |
 | Um redirecionamento a mais a partir de Portugal (passo 3) | A Google manda primeiro para o consentimento de cookies (`consent.google.com`) | O mesmo ciclo de redirecionamentos, até 5 saltos | O que um servidor responde pode depender do país de onde se pede |
 
 ## As ferramentas em resumo
@@ -93,6 +100,8 @@ Do mais antigo para o mais recente.
 | JWT com Nimbus JOSE | — | Assinar e ler os tokens de login (HS256) | passo 5 |
 | BCrypt (`DelegatingPasswordEncoder`) | — | Guardar passwords como hash | passo 5 |
 | Problem Details (RFC 9457) | Spring 7.0 | Formato único das respostas de erro | passo 5 |
+| springdoc-openapi (Swagger) | 3.1.1 | Documentação da API gerada dos controllers | passo 6 |
+| Funções de janela do PostgreSQL (`LAG`, `FILTER`, `LATERAL`) | 17 | Estatísticas calculadas na base de dados | passo 6 |
 | Git, GitHub e `gh` | — | Histórico do código e repositório remoto | passo 1 |
 | ADRs | — | Registar as decisões | passo 1 |
 
@@ -396,6 +405,33 @@ As versões das bibliotecas vêm do Spring Boot 4.1.1. Para as ver: `./mvnw depe
 - **Em que já ajudou:** os erros de registo (400 com os campos, 409) e de login (401)
   saem no mesmo formato sem código de tratamento em cada controller.
 
+### springdoc-openapi (Swagger)
+
+- **O que é:** lê os controllers e gera a descrição da API em OpenAPI 3 (`/v3/api-docs`)
+  e uma página para a experimentar (Swagger UI, em `/swagger-ui.html`).
+- **Porquê:** a documentação da API nunca fica desatualizada, porque vem do código. É o
+  que as equipas Spring usam.
+- **Alternativa que ficou de fora:** escrever o ficheiro OpenAPI à mão (fica sempre
+  atrás do código); Spring REST Docs (documentação a partir dos testes, mais trabalho).
+- **Onde está:** `springdoc-openapi-starter-webmvc-ui` no `pom.xml` (versão em
+  `<springdoc.version>`), `OpenApiConfiguration.java` (título e esquema Bearer), e as
+  regras públicas em `SecurityConfiguration`.
+- **Em que já ajudou:** os 8 endpoints aparecem sozinhos, e o botão "Authorize" aceita o
+  token do login. Um teste confirma que a documentação abre sem login.
+
+### Funções de janela do PostgreSQL (`LAG`, `FILTER`, `LATERAL`)
+
+- **O que é:** o `LAG(x) OVER (PARTITION BY ... ORDER BY ...)` lê o valor da linha
+  anterior dentro de um grupo. O `FILTER (WHERE ...)` filtra o que entra numa soma. O
+  `JOIN LATERAL` corre uma subconsulta por linha, que pode usar os valores dessa linha.
+- **Porquê:** os ganhos diários e "o último número conhecido" calculam-se numa só
+  consulta, onde estão os dados. São perguntas clássicas de entrevista de SQL.
+- **Alternativa que ficou de fora:** carregar as fotografias para Java e calcular lá
+  (mais código e mais dados a viajar); tabelas de resumo (mais uma coisa a manter certa).
+- **Onde está:** `stats/StatsQueries.java`.
+- **Em que já ajudou:** com o `LAG` pelo total em vez de por listing, o teste falha com
+  um ganho de 495 que não existiu. É a prova de que o `PARTITION BY` é necessário.
+
 ### Git, GitHub e `gh`
 
 - **O que é:** o Git guarda o histórico. O GitHub guarda o repositório remoto. O `gh` é a
@@ -419,8 +455,7 @@ Do documento do projeto, por passo. Cada ferramenta ganha a sua ficha quando ent
 | Ferramenta | Para quê | Passo |
 | --- | --- | --- |
 | ShedLock | Só uma instância a recolher, quando houver mais do que um servidor | deploy |
-| springdoc-openapi | Swagger gerado a partir do código | 6 |
-| JaCoCo | Cobertura de testes na CI | 6 |
+| JaCoCo | Cobertura de testes na CI (mínimo de 70% nos serviços) | antes do deploy |
 | Spring Mail | Alertas e resumo semanal por email | 8 |
 | Render ou Fly.io | Deploy da v1 | 10 |
 | AWS (ECR, ECS Fargate, RDS, SES) | Deploy da v2 | v2 |
