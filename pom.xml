@@ -30,6 +30,7 @@
 		<java.version>25</java.version>
 		<jsoup.version>1.23.2</jsoup.version>
 		<resilience4j.version>2.4.0</resilience4j.version>
+		<springdoc.version>3.1.1</springdoc.version>
 		<wiremock.version>3.13.2</wiremock.version>
 		<!-- Tests against the real stores run only in the weekly live-stores workflow. -->
 		<excludedGroups>live</excludedGroups>
@@ -67,6 +68,11 @@
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
 			<version>${jsoup.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>${springdoc.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.resilience4j</groupId>
