@@ -23,6 +23,15 @@ spring:
   flyway:
     locations: classpath:db/migration
 
+extpulse:
+  stores:
+    marketplace-url: https://marketplace.visualstudio.com
+    open-vsx-url: https://open-vsx.org
+    chrome-web-store-url: https://chromewebstore.google.com
+    # A store that doesn't answer in time fails the request instead of hanging.
+    connect-timeout: 5s
+    read-timeout: 10s
+
 management:
   endpoints:
     web:
