@@ -35,6 +35,13 @@ Do mais antigo para o mais recente.
 | 2026-10-26 | 3 | Chrome lido pelo texto visível com jsoup ([0005](../decisions/0005-store-adapters.md)) | Não há API; as classes CSS são geradas e mudam |
 | 2026-10-26 | 3 | 25 testes com WireMock; 3 testes `live` contra as lojas reais, fora do build normal, num workflow semanal | Testes rápidos e estáveis, e um aviso quando uma loja muda |
 | 2026-10-26 | 3 | O adaptador do Chrome segue os redirecionamentos ele próprio | Encontrado pelo teste `live`: a loja redireciona para um URL com UTF-8 cru que o JDK não aceita |
+| 2026-10-26 | 3 | PR #3 para levar o passo 3 ao `main`; daqui em diante, todos os PRs com base no `main` | O PR #2 tinha base no branch do passo 2 e o merge foi para lá, não para o `main` |
+| 2026-10-26 | 4 | Migração `V2`: `collection_runs` e `collection_run_errors` | Histórico de cada execução e do que falhou, consultável com SQL simples |
+| 2026-10-26 | 4 | Pacote novo `catalog` e a primeira entidade JPA (`Listing`) | Publishers, extensões e listings são lidos por vários pacotes |
+| 2026-10-26 | 4 | `CollectionService` com upsert (`ON CONFLICT DO UPDATE`), falhas isoladas por listing e sem transação à volta da execução | Correr duas vezes é seguro; uma loja em baixo não estraga o dia; nenhuma ligação à base de dados fica presa durante pedidos à internet ([0006](../decisions/0006-daily-collection.md)) |
+| 2026-10-26 | 4 | Resilience4j: 4 tentativas (1 s, 4 s, 16 s) e 1 pedido por segundo a cada loja | Falhas momentâneas não perdem o dia; nenhuma loja é sobrecarregada |
+| 2026-10-26 | 4 | `@Scheduled` às 06:00 em `Europe/Lisbon` e um `Clock` para toda a app | "Hoje" é o dia em Lisboa, também na hora de verão; os testes fixam a hora |
+| 2026-10-26 | 4 | Recolha real das 12 listings na base de dados de desenvolvimento, duas vezes | Prova de ponta a ponta: 12 recolhidas, 0 falhas, 6 s, e 12 fotografias (não 24) depois da segunda execução |
 
 ## Problemas que apareceram
 
@@ -47,6 +54,8 @@ Do mais antigo para o mais recente.
 | Os 10 testes falharam todos de uma vez, até os que já passavam (passo 2) | O Docker Desktop estava fechado. O erro no relatório: `Previous attempts to find a Docker environment failed` | Abrir o Docker Desktop e correr de novo | Quando falham todos os testes ao mesmo tempo com `Failed to load ApplicationContext`, o problema costuma ser o ambiente, não o código. Ver o primeiro `Caused by` em `target/surefire-reports/` |
 | Testes do Marketplace com `RST_STREAM: Stream cancelled` (passo 3) | Em `http://` o cliente do JDK tenta HTTP/2 por upgrade (h2c), e o Jetty do WireMock corta os pedidos com corpo | `http2PlainDisabled(true)` na configuração do WireMock | Um erro só nos testes pode vir do servidor falso e não do código. As lojas reais são `https` |
 | O teste `live` do Chrome falhou com `Illegal character in path` (passo 3) | A loja redireciona para `/detail/director’s-cut-for-letter/{id}` com UTF-8 cru no cabeçalho `Location`; o JDK lê-o como ISO-8859-1 | O adaptador segue os redirecionamentos e codifica o URL (`%E2%80%99`) | As respostas gravadas não mostram tudo. Um teste contra o sistema real apanha o que elas escondem |
+| O PR #2 entrou no branch do passo 2 e não no `main` (passo 3) | O PR #2 tinha base em `feat/core-schema`. O GitHub só muda a base para `main` se o branch do PR anterior for apagado no merge, o que não está ligado neste repositório | PR #3 do `feat/store-adapters` para o `main`. Daqui em diante, todos os PRs com base no `main` | Um PR "empilhado" sobre outro é frágil. Com base no `main`, mostra os commits do anterior até esse ter merge, e mais nada |
+| `--extpulse.collection.cron=0 * * * * *` chegou à app como `"0"` (passo 4) | O `-Dspring-boot.run.arguments` do plugin do Maven parte os argumentos nos espaços | Passar por variável de ambiente: `EXTPULSE_COLLECTION_CRON='0 * * * * *'` | O Spring Boot lê variáveis de ambiente (`EXTPULSE_COLLECTION_CRON` = `extpulse.collection.cron`), e é assim que a produção recebe configuração |
 | Um redirecionamento a mais a partir de Portugal (passo 3) | A Google manda primeiro para o consentimento de cookies (`consent.google.com`) | O mesmo ciclo de redirecionamentos, até 5 saltos | O que um servidor responde pode depender do país de onde se pede |
 
 ## As ferramentas em resumo
@@ -72,6 +81,8 @@ Do mais antigo para o mais recente.
 | jsoup | 1.23.2 | Ler o HTML da página da Chrome Web Store | passo 3 |
 | WireMock | 3.13.2 | Servidor HTTP falso no lugar das lojas, nos testes | passo 3 |
 | Tags do JUnit (`@Tag`) | 6.0 | Separar os testes contra as lojas reais | passo 3 |
+| Resilience4j (retry, ratelimiter) | 2.4.0 | Retries com espera crescente e ritmo por loja | passo 4 |
+| `@Scheduled` e `Clock` | Spring 7.0 / Java 25 | Agendar a recolha diária; "hoje" em Lisboa | passo 4 |
 | Git, GitHub e `gh` | — | Histórico do código e repositório remoto | passo 1 |
 | ADRs | — | Registar as decisões | passo 1 |
 
@@ -126,7 +137,11 @@ As versões das bibliotecas vêm do Spring Boot 4.1.1. Para as ver: `./mvnw depe
   não tem entidades.
 - **Onde está:** `spring-boot-starter-data-jpa`; `ddl-auto: validate` e `open-in-view: false`
   no `application.yaml`.
-- **Em que já ajudou:** ainda não há entidades (entram no passo 3).
+- **Em que já ajudou:** no passo 4 entraram as primeiras entidades (`Listing`,
+  `CollectionRun` com uma `@ElementCollection` de erros). Os repositórios não têm uma
+  linha de código, e o `ddl-auto: validate` confirmou ao arrancar que as entidades batem
+  com as tabelas. O upsert das fotografias ficou em SQL (`JdbcClient`), porque o JPA não
+  faz "insere ou atualiza".
 
 ### Spring Boot Actuator
 
@@ -284,6 +299,36 @@ As versões das bibliotecas vêm do Spring Boot 4.1.1. Para as ver: `./mvnw depe
 - **Em que já ajudou:** o primeiro teste `live` encontrou o bug do redirecionamento do
   Chrome, que as respostas gravadas não mostravam.
 
+### Resilience4j
+
+- **O que é:** uma biblioteca de tolerância a falhas: retry, rate limiter, circuit
+  breaker, bulkhead. Cada um envolve uma chamada (`Retry.decorateSupplier(...)`).
+- **Porquê:** as lojas falham de vez em quando, e pedir depressa demais pode levar a um
+  bloqueio. É a biblioteca que mais aparece em vagas de Java para isto.
+- **Alternativa que ficou de fora:** o starter com anotações `@Retry` (funciona por
+  proxies, e uma chamada de dentro da mesma classe passa ao lado sem aviso); o
+  `@Retryable` novo do Spring Framework 7 (não tem rate limiter); escrever o ciclo de
+  retries à mão.
+- **Onde está:** `ResilientStoreCalls.java`; os valores em `extpulse.collection` no
+  `application.yaml`; só os módulos `resilience4j-retry` e `resilience4j-ratelimiter`.
+- **Em que já ajudou:** na recolha real, as 12 listings demoraram 6 segundos, sem
+  nenhuma loja a receber mais de um pedido por segundo. Os testes provam que os retries
+  esperam cada vez mais e que uma listing que não existe não é repetida.
+
+### `@Scheduled` e `Clock`
+
+- **O que é:** o `@Scheduled(cron = ...)` do Spring corre um método a horas marcadas. O
+  `Clock` do Java diz que horas são, e pode ser trocado por um relógio fixo nos testes.
+- **Porquê:** a recolha corre sozinha todos os dias, e "hoje" tem de ser o dia em Lisboa.
+- **Alternativa que ficou de fora:** Quartz (muito mais completo, com tabelas próprias; a
+  mais para uma tarefa por dia); um cron do sistema operativo a chamar um endpoint (fica
+  fora da app e dos testes).
+- **Onde está:** `DailyCollectionJob.java` (o cron e o fuso vêm do `application.yaml`),
+  `CollectionConfiguration.java` (`@EnableScheduling`) e `TimeConfiguration.java` (o `Clock`).
+- **Em que já ajudou:** os testes provam que o agendamento corre às 05:00 UTC no verão e
+  às 06:00 UTC no inverno, e que uma recolha às 23:30 UTC de 15 de julho fica com o dia 16.
+  Para experimentar, `EXTPULSE_COLLECTION_CRON='0 * * * * *'` pôs a recolha a correr a cada minuto.
+
 ### Git, GitHub e `gh`
 
 - **O que é:** o Git guarda o histórico. O GitHub guarda o repositório remoto. O `gh` é a
@@ -306,8 +351,7 @@ Do documento do projeto, por passo. Cada ferramenta ganha a sua ficha quando ent
 
 | Ferramenta | Para quê | Passo |
 | --- | --- | --- |
-| Resilience4j | Retries com espera crescente e 1 pedido por segundo a cada loja | 4 |
-| `@Scheduled` (+ ShedLock mais tarde) | A recolha diária | 4 |
+| ShedLock | Só uma instância a recolher, quando houver mais do que um servidor | deploy |
 | springdoc-openapi | Swagger gerado a partir do código | 5 |
 | JaCoCo | Cobertura de testes na CI | 5 |
 | Spring Security + JWT | Contas e login | 7 |
