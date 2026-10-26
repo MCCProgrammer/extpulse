@@ -3,7 +3,7 @@
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
 
-> **Status:** project setup. Nothing is collected yet.
+> **Status:** in development. The database schema and the store adapters are done; the daily collection is next.
 
 ## Why
 
@@ -29,7 +29,8 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Framework | Spring Boot 4.1 (Web MVC, Data JPA, Validation, Actuator) |
 | Database | PostgreSQL 17, schema managed by Flyway |
 | Build | Maven (through the Maven Wrapper, `./mvnw`) |
-| Tests | JUnit 6, Spring Boot Test, Testcontainers |
+| Store clients | Spring RestClient (JDK HttpClient), jsoup for the Chrome Web Store page |
+| Tests | JUnit 6, Spring Boot Test, Testcontainers, WireMock |
 | Local services | Docker Compose |
 | CI | GitHub Actions |
 
@@ -46,8 +47,11 @@ Why each choice was made: [docs/decisions](docs/decisions).
 # Check that it is up and connected to the database
 curl http://localhost:8080/actuator/health   # {"status":"UP"}
 
-# Run all tests (Testcontainers starts a throwaway PostgreSQL)
+# Run all tests (Testcontainers starts a throwaway PostgreSQL; WireMock stands in for the stores)
 ./mvnw verify
+
+# Only the tests against the real stores (left out of the normal build)
+./mvnw test -Dgroups=live -DexcludedGroups=
 ```
 
 ## Project structure
@@ -67,6 +71,7 @@ src/main/resources/
 └── db/migration/              Flyway migrations (V1__..., V2__...)
 compose.yaml                   local PostgreSQL
 .github/workflows/ci.yml       build and tests on every push
+.github/workflows/live-stores.yml  weekly test against the real stores
 docs/decisions/                architecture decision records
 ```
 
