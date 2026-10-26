@@ -3,7 +3,7 @@
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
 
-> **Status:** in development. The daily collection works end to end, and accounts can register and log in. The catalog and stats API is next.
+> **Status:** in development. Accounts, publishers and stats work through the REST API, and the daily collection runs on its own. Reviews are next.
 
 ## Why
 
@@ -28,6 +28,7 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Language | Java 25 |
 | Framework | Spring Boot 4.1 (Web MVC, Data JPA, Validation, Actuator) |
 | Security | Spring Security: BCrypt passwords, stateless JWT login (OAuth2 resource server) |
+| API docs | springdoc-openapi (OpenAPI 3, Swagger UI at `/swagger-ui.html`) |
 | Database | PostgreSQL 17, schema managed by Flyway |
 | Build | Maven (through the Maven Wrapper, `./mvnw`) |
 | Store clients | Spring RestClient (JDK HttpClient), jsoup for the Chrome Web Store page |
@@ -58,16 +59,36 @@ curl http://localhost:8080/actuator/health   # {"status":"UP"}
 
 ### Try the API
 
+The full description is at <http://localhost:8080/swagger-ui.html> (log in, then
+"Authorize" with the token). With `curl`:
+
 ```bash
-# Create an account and log in
+# Create an account and log in; copy the token from the answer
 curl -X POST localhost:8080/api/auth/register -H 'Content-Type: application/json' \
   -d '{"email": "you@example.com", "password": "at least 10 characters"}'
 curl -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' \
   -d '{"email": "you@example.com", "password": "at least 10 characters"}'
+TOKEN=...
 
-# Use the token from the login answer
-curl localhost:8080/api/me -H 'Authorization: Bearer <token>'
+# Track a publisher: finds its extensions on the Marketplace and Open VSX
+curl -X POST localhost:8080/api/publishers -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"name": "MCCProgrammer"}'
+
+# Your extensions with today's installs and this week's gain; one extension over time
+curl localhost:8080/api/extensions -H "Authorization: Bearer $TOKEN"
+curl "localhost:8080/api/extensions/1/stats?from=2026-10-01&granularity=week" -H "Authorization: Bearer $TOKEN"
 ```
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| POST | `/api/auth/register`, `/api/auth/login` | Create an account; get a token (no login needed) |
+| GET | `/api/me` | The account the token belongs to |
+| POST, GET | `/api/publishers` | Track a publisher on every store; list yours |
+| POST | `/api/extensions` | Add an extension by hand (for Chrome extensions) |
+| POST | `/api/extensions/{id}/listings` | Add a listing by its store ID (for example a Chrome item ID) |
+| GET | `/api/extensions` | Installs today and gain over 7 days, per extension and store |
+| GET | `/api/extensions/{id}/stats` | Installs over time: `from`, `to` (ISO dates), `granularity=day\|week` |
+| POST | `/api/admin/collect` | Run the collection now (admins) |
 
 Errors come back as [Problem Details](https://www.rfc-editor.org/rfc/rfc9457) JSON.
 In production, set `EXTPULSE_AUTH_JWT_SECRET` (32+ bytes); without it, tokens stop

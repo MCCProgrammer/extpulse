@@ -34,6 +34,8 @@ class SchemaTests {
 
 	@BeforeEach
 	void createAListing() {
+		// Other test classes share the database and commit their data; start from empty.
+		jdbc.sql("DELETE FROM users").update();
 		userId = insertUser("miguel@example.com");
 		long publisherId = jdbc.sql("INSERT INTO publishers (user_id, name) VALUES (:user, 'MCCProgrammer') RETURNING id")
 				.param("user", userId)

@@ -13,8 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * An extension's presence on one store. Read-only for now: listings are created when
- * publishers are added through the API.
+ * An extension's presence on one store.
  */
 @Entity
 @Table(name = "listings")
@@ -37,6 +36,13 @@ public class Listing {
 	private Instant createdAt;
 
 	protected Listing() {
+	}
+
+	Listing(long extensionId, Store store, String externalId, String url) {
+		this.extensionId = extensionId;
+		this.store = store;
+		this.externalId = externalId;
+		this.url = url;
 	}
 
 	public Long getId() {

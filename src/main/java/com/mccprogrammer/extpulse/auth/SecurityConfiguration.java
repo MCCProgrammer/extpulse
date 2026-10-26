@@ -47,6 +47,8 @@ class SecurityConfiguration {
 		http.authorizeHttpRequests((requests) -> requests
 				.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
 				.requestMatchers("/actuator/health/**", "/actuator/info", "/error").permitAll()
+				// The API description and Swagger UI: public, like the API's own docs would be.
+				.requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
 				.requestMatchers("/api/admin/**").hasAuthority("SCOPE_admin")
 				.anyRequest().authenticated())
 			.oauth2ResourceServer((resourceServer) -> resourceServer.jwt(Customizer.withDefaults()))
