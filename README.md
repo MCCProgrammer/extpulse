@@ -3,7 +3,7 @@
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
 
-> **Status:** in development. The database schema and the store adapters are done; the daily collection is next.
+> **Status:** in development. The daily collection works end to end (schema, store adapters, scheduled job); stats and the REST API are next.
 
 ## Why
 
@@ -30,6 +30,7 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Database | PostgreSQL 17, schema managed by Flyway |
 | Build | Maven (through the Maven Wrapper, `./mvnw`) |
 | Store clients | Spring RestClient (JDK HttpClient), jsoup for the Chrome Web Store page |
+| Resilience | Resilience4j (retries with backoff, one request per second per store) |
 | Tests | JUnit 6, Spring Boot Test, Testcontainers, WireMock |
 | Local services | Docker Compose |
 | CI | GitHub Actions |
@@ -59,6 +60,7 @@ curl http://localhost:8080/actuator/health   # {"status":"UP"}
 ```
 src/main/java/com/mccprogrammer/extpulse/
 ├── ExtpulseApplication.java   entry point
+├── catalog/      publishers, extensions and their listings on each store
 ├── store/        adapters for each store (the only code that calls them)
 ├── collection/   the daily scheduled collection
 ├── stats/        totals and gains read from the snapshots
