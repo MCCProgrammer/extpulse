@@ -14,8 +14,8 @@ os problemas que apareceram e uma ficha por ferramenta. Atualiza-se no fim de ca
 | 3 | [Adaptadores das lojas](03-lojas.md) | feito |
 | 4 | [Recolha diária](04-recolha.md) | feito |
 | 5 | [Contas e login (Spring Security, JWT)](05-contas.md) | feito |
-| 6 | Catálogo e estatísticas na API (publishers, `LAG`, Swagger) | a seguir |
-| 7 | Avaliações | por fazer |
+| 6 | [Catálogo e estatísticas na API](06-catalogo-estatisticas.md) | feito |
+| 7 | Avaliações | a seguir |
 | 8 | Alertas e resumo semanal | por fazer |
 | 9 | Página pública e badge | por fazer |
 | 10 | Deploy | por fazer |

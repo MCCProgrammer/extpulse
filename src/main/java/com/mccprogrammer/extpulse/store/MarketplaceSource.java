@@ -56,9 +56,11 @@ class MarketplaceSource implements StoreSource {
 	public List<DiscoveredListing> discover(String publisher) {
 		return query(BY_PUBLISHER_NAME, publisher, PUBLISHER_PAGE_SIZE).stream()
 				.map(extension -> {
-					String externalId = extension.publisher().publisherName() + "." + extension.extensionName();
-					return new DiscoveredListing(store(), externalId, extension.displayName(),
-							this.baseUrl + "/items?itemName=" + externalId);
+					String publisherName = extension.publisher().publisherName();
+					String externalId = publisherName + "." + extension.extensionName();
+					return new DiscoveredListing(store(), externalId,
+							DiscoveredListing.vsCodeExtensionKey(publisherName, extension.extensionName()),
+							extension.displayName(), this.baseUrl + "/items?itemName=" + externalId);
 				})
 				.toList();
 	}
