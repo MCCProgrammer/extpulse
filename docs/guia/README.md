@@ -4,11 +4,14 @@ Um capítulo por passo do projeto: o que foi feito, porquê, e como confirmar qu
 funciona. Lê-se por ordem. As decisões técnicas (curtas, em inglês) estão em
 [`../decisions`](../decisions).
 
+**[Ferramentas e registo](ferramentas.md):** o que foi feito em cada passo e porquê,
+os problemas que apareceram e uma ficha por ferramenta. Atualiza-se no fim de cada passo.
+
 | Passo | Capítulo | Estado |
 | --- | --- | --- |
 | 1 | [Setup do projeto](01-setup.md) | feito |
-| 2 | [Esquema da base de dados](02-esquema.md) | a seguir (escreves tu) |
-| 3 | Adaptadores das lojas (`StoreSource`) e testes com WireMock | por fazer |
+| 2 | [Esquema da base de dados](02-esquema.md) | feito |
+| 3 | Adaptadores das lojas (`StoreSource`) e testes com WireMock | a seguir |
 | 4 | Recolha diária (`@Scheduled`, idempotência) | por fazer |
 | 5 | Estatísticas (consultas com `LAG`) e API REST | por fazer |
 | 6 | Avaliações | por fazer |
