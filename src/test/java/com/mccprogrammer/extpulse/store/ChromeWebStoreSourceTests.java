@@ -114,6 +114,11 @@ class ChromeWebStoreSourceTests {
 	}
 
 	@Test
+	void doesNotReadReviewsYet() {
+		assertThat(this.source.fetchReviews(DIRECTORS_CUT)).isEmpty();
+	}
+
+	@Test
 	void cannotDiscoverByPublisher() {
 		assertThat(this.source.discover("MCCProgrammer")).isEmpty();
 	}

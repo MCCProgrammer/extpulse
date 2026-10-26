@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 import com.mccprogrammer.extpulse.store.DiscoveredListing;
 import com.mccprogrammer.extpulse.store.ListingStats;
 import com.mccprogrammer.extpulse.store.Store;
+import com.mccprogrammer.extpulse.store.StoreReview;
 import com.mccprogrammer.extpulse.store.StoreSource;
 
 /**
@@ -26,6 +27,8 @@ class FakeStoreSource implements StoreSource {
 	};
 
 	private final List<Long> callTimesNanos = new ArrayList<>();
+
+	private Supplier<List<StoreReview>> reviews = List::of;
 
 	FakeStoreSource(Store store) {
 		this.store = store;
@@ -50,6 +53,18 @@ class FakeStoreSource implements StoreSource {
 		return this;
 	}
 
+	FakeStoreSource reviews(StoreReview... reviews) {
+		this.reviews = () -> List.of(reviews);
+		return this;
+	}
+
+	FakeStoreSource reviewsFail(RuntimeException ex) {
+		this.reviews = () -> {
+			throw ex;
+		};
+		return this;
+	}
+
 	int calls() {
 		return this.callTimesNanos.size();
 	}
@@ -66,6 +81,11 @@ class FakeStoreSource implements StoreSource {
 	@Override
 	public List<DiscoveredListing> discover(String publisher) {
 		return List.of();
+	}
+
+	@Override
+	public List<StoreReview> fetchReviews(String externalId) {
+		return this.reviews.get();
 	}
 
 	@Override

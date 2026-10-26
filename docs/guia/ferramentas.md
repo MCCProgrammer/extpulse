@@ -55,6 +55,12 @@ Do mais antigo para o mais recente.
 | 2026-10-26 | 6 | Um só PostgreSQL para todos os testes | 3 contentores passaram a 1; obrigou cada teste a limpar antes de começar |
 | 2026-10-26 | 6 | 21 testes novos (80 no total); experimentado com os dados reais e a descoberta real do publisher PKief | Total combinado das 7 extensões, recolha manual 12/12, nomes repetidos distinguidos pela chave |
 | 2026-10-26 | — | JaCoCo 0.8.15: o build falha abaixo de 85% das linhas, 70% dos ramos ou 80% das linhas de qualquer `*Service`; a CI mostra a cobertura e guarda o relatório | Medido antes: 93,8% das linhas e 78,2% dos ramos. Os limites ficam um pouco abaixo, para apanhar uma descida real |
+| 2026-10-26 | 7 | Respostas reais das lojas pedidas antes de desenhar as avaliações | O Open VSX não tem IDs nem respostas; o Chrome mostra-as numa página sem IDs; o `filterOptions=1` do plano escondia as avaliações sem texto |
+| 2026-10-26 | 7 | `fetchReviews` nas três lojas; tabela `reviews` (V4) com upsert por `(listing_id, external_id)`, `first_seen_at` e `read_at` ([0009](../decisions/0009-reviews.md)) | Uma caixa de entrada para todas as lojas; os alertas do passo 8 vão saber o que é novo |
+| 2026-10-26 | 7 | A recolha lê as avaliações depois de gravar a fotografia | Se as avaliações falharem, os números do dia não se perdem |
+| 2026-10-26 | 7 | `GET /api/reviews` (filtros, total, páginas) e `PATCH /api/reviews/{id}` | Ver o 1★ que interessa e marcar o que já foi visto |
+| 2026-10-26 | 7 | Autores anonimizados nas respostas gravadas para os testes | São dados públicos, mas não precisam de ficar no repositório |
+| 2026-10-26 | 7 | 17 testes novos (97 no total; 93,9% das linhas); recolha real trouxe o 1★ do Diff Checker com a tua resposta | — |
 
 ## Problemas que apareceram
 
@@ -70,6 +76,7 @@ Do mais antigo para o mais recente.
 | O PR #2 entrou no branch do passo 2 e não no `main` (passo 3) | O PR #2 tinha base em `feat/core-schema`. O GitHub só muda a base para `main` se o branch do PR anterior for apagado no merge, o que não está ligado neste repositório | PR #3 do `feat/store-adapters` para o `main`. Daqui em diante, todos os PRs com base no `main` | Um PR "empilhado" sobre outro é frágil. Com base no `main`, mostra os commits do anterior até esse ter merge, e mais nada |
 | `--extpulse.collection.cron=0 * * * * *` chegou à app como `"0"` (passo 4) | O `-Dspring-boot.run.arguments` do plugin do Maven parte os argumentos nos espaços | Passar por variável de ambiente: `EXTPULSE_COLLECTION_CRON='0 * * * * *'` | O Spring Boot lê variáveis de ambiente (`EXTPULSE_COLLECTION_CRON` = `extpulse.collection.cron`), e é assim que a produção recebe configuração |
 | `SchemaTests` falhou 8 vezes com `duplicate key users_email_lower_key` (passo 6) | Com um só PostgreSQL para todos os testes, encontrou contas gravadas por outras classes de teste | Cada teste apaga o que precisa antes de começar | Um teste não pode assumir uma base de dados vazia. Contentores separados escondiam isso |
+| O `filterOptions=1` da API de avaliações do Marketplace, previsto no plano, esconde as avaliações sem texto (passo 7) | É o filtro "sem avaliações vazias" da loja | Usar o filtro por omissão; um teste confirma que o parâmetro não vai | Ler a documentação (ou testar) cada parâmetro copiado. Um 1★ sem texto era o que mais importava |
 | Um redirecionamento a mais a partir de Portugal (passo 3) | A Google manda primeiro para o consentimento de cookies (`consent.google.com`) | O mesmo ciclo de redirecionamentos, até 5 saltos | O que um servidor responde pode depender do país de onde se pede |
 
 ## As ferramentas em resumo

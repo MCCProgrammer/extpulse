@@ -1,6 +1,8 @@
 package com.mccprogrammer.extpulse.store;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,12 +10,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -102,6 +108,71 @@ class MarketplaceSourceTests {
 
 		assertThatThrownBy(() -> this.source.fetchStats("MCCProgrammer.diff-checker"))
 			.isInstanceOf(StoreException.class);
+	}
+
+	@Test
+	void readsReviewsWithThePublishersReply() {
+		stubReviews("MCCProgrammer", "diff-checker", aResponse().withBodyFile("marketplace/reviews-diff-checker.json"));
+
+		List<StoreReview> reviews = this.source.fetchReviews("MCCProgrammer.diff-checker");
+
+		assertThat(reviews).singleElement().satisfies((review) -> {
+			assertThat(review.externalId()).isEqualTo("326941");
+			assertThat(review.rating()).isEqualTo(1);
+			assertThat(review.text()).startsWith("Does not work for me.");
+			assertThat(review.author()).isEqualTo("Reviewer 1");
+			assertThat(review.productVersion()).isEqualTo("0.1.1");
+			assertThat(review.postedAt()).isEqualTo(Instant.parse("2026-01-29T15:11:13.57Z"));
+			assertThat(review.reply()).startsWith("Hi,");
+		});
+	}
+
+	@Test
+	void keepsRatingsWithoutTextAndDoesNotAskTheStoreToHideThem() {
+		stubReviews("esbenp", "prettier-vscode", aResponse().withBodyFile("marketplace/reviews-prettier-vscode.json"));
+
+		List<StoreReview> reviews = this.source.fetchReviews("esbenp.prettier-vscode");
+
+		assertThat(reviews).hasSize(5);
+		assertThat(reviews).filteredOn((review) -> review.text() == null)
+			.singleElement()
+			.satisfies((review) -> assertThat(review.rating()).isEqualTo(5));
+		// filterOptions=1 would leave ratings without text out.
+		marketplace.verify(getRequestedFor(urlPathEqualTo("/_apis/public/gallery/publishers/esbenp/extensions/prettier-vscode/reviews"))
+			.withQueryParam("filterOptions", absent())
+			.withHeader("Accept", equalTo("application/json;api-version=7.2-preview.1")));
+	}
+
+	@Test
+	void leavesOutDeletedAndHiddenReviewsAndDeletedReplies() {
+		stubReviews("MCCProgrammer", "diff-checker", aResponse().withBody("""
+				{"reviews": [
+				  {"id": 1, "userDisplayName": "A", "updatedDate": "2026-10-01T10:00:00Z", "rating": 4, "text": "ok",
+				   "isDeleted": false, "isIgnored": false, "reply": {"replyText": "thanks", "isDeleted": true}},
+				  {"id": 2, "userDisplayName": "B", "updatedDate": "2026-10-02T10:00:00Z", "rating": 1, "text": "x",
+				   "isDeleted": true, "isIgnored": false},
+				  {"id": 3, "userDisplayName": "C", "updatedDate": "2026-10-03T10:00:00Z", "rating": 1, "text": "spam",
+				   "isDeleted": false, "isIgnored": true}
+				]}"""));
+
+		assertThat(this.source.fetchReviews("MCCProgrammer.diff-checker")).singleElement()
+			.satisfies((review) -> assertThat(review.reply()).isNull());
+	}
+
+	@Test
+	void reviewsOfAnUnknownExtensionAreNotFound() {
+		stubReviews("MCCProgrammer", "gone", aResponse().withStatus(404));
+
+		assertThatThrownBy(() -> this.source.fetchReviews("MCCProgrammer.gone"))
+			.isInstanceOf(ListingNotFoundException.class);
+		assertThatThrownBy(() -> this.source.fetchReviews("no-dot")).isInstanceOf(IllegalArgumentException.class);
+	}
+
+	private void stubReviews(String publisher, String name,
+			com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder response) {
+		marketplace.stubFor(get(urlPathEqualTo("/_apis/public/gallery/publishers/" + publisher + "/extensions/" + name
+				+ "/reviews"))
+			.willReturn(response.withHeader("Content-Type", "application/json; charset=utf-8")));
 	}
 
 	private void stubQuery(int filterType, String value, String bodyFile) {
