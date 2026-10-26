@@ -29,7 +29,7 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Framework | Spring Boot 4.1 (Web MVC, Data JPA, Validation, Actuator) |
 | Database | PostgreSQL 17, schema managed by Flyway |
 | Build | Maven (through the Maven Wrapper, `./mvnw`) |
-| Tests | JUnit 5, Spring Boot Test, Testcontainers |
+| Tests | JUnit 6, Spring Boot Test, Testcontainers |
 | Local services | Docker Compose |
 | CI | GitHub Actions |
 
