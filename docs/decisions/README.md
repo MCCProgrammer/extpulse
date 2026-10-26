@@ -11,3 +11,4 @@ changes gets a new record that replaces the old one.
 | [0003](0003-postgresql-and-flyway.md) | PostgreSQL, with the schema owned by Flyway |
 | [0004](0004-docker-compose-and-testcontainers.md) | Docker Compose for development, Testcontainers for tests |
 | [0005](0005-store-adapters.md) | Store adapters, and reading the Chrome Web Store page |
+| [0006](0006-daily-collection.md) | The daily collection: idempotent, isolated failures, retries and pacing |
