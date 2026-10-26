@@ -10,3 +10,4 @@ changes gets a new record that replaces the old one.
 | [0002](0002-modular-monolith.md) | One application, split into modules by feature |
 | [0003](0003-postgresql-and-flyway.md) | PostgreSQL, with the schema owned by Flyway |
 | [0004](0004-docker-compose-and-testcontainers.md) | Docker Compose for development, Testcontainers for tests |
+| [0005](0005-store-adapters.md) | Store adapters, and reading the Chrome Web Store page |

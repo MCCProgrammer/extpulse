@@ -29,7 +29,12 @@ Do mais antigo para o mais recente.
 | 2026-10-26 | 2 | Migração `V1__create_core_tables.sql`: `users`, `publishers`, `extensions`, `listings`, `snapshots` | As regras que importam (uma fotografia por dia, lojas válidas, nada negativo) ficam na base de dados, onde um bug no Java não as consegue partir |
 | 2026-10-26 | 2 | Índice `listings_extension_id_idx`, além da especificação | O PostgreSQL não indexa chaves estrangeiras sozinho, e o total combinado procura as listings por extensão |
 | 2026-10-26 | 2 | `SchemaTests`: 8 testes, um por regra; 10 testes no total | Provar cada regra. Confirmado ao retirar duas restrições: falharam os dois testes certos |
-| 2026-10-26 | 2 | Trabalho feito no branch `feat/core-schema` | Primeiro passo com um branch por passo, como numa equipa |
+| 2026-10-26 | 2 | Trabalho feito no branch `feat/core-schema`; PR #1 | Primeiro passo com um branch e um pull request por passo, como numa equipa |
+| 2026-10-26 | 3 | Interface `StoreSource` e um adaptador por loja (Marketplace, Open VSX, Chrome Web Store) | O resto da app fala com uma interface; uma loja nova é uma classe nova |
+| 2026-10-26 | 3 | Chamadas reais às três lojas antes de escrever código; respostas gravadas para os testes | Descobrir como as lojas respondem de facto (estatísticas que faltam, pesquisa do Open VSX que ignora o namespace, página do Chrome sem `<h1>` para IDs desconhecidos) |
+| 2026-10-26 | 3 | Chrome lido pelo texto visível com jsoup ([0005](../decisions/0005-store-adapters.md)) | Não há API; as classes CSS são geradas e mudam |
+| 2026-10-26 | 3 | 25 testes com WireMock; 3 testes `live` contra as lojas reais, fora do build normal, num workflow semanal | Testes rápidos e estáveis, e um aviso quando uma loja muda |
+| 2026-10-26 | 3 | O adaptador do Chrome segue os redirecionamentos ele próprio | Encontrado pelo teste `live`: a loja redireciona para um URL com UTF-8 cru que o JDK não aceita |
 
 ## Problemas que apareceram
 
@@ -40,6 +45,9 @@ Do mais antigo para o mais recente.
 | Os testes não corriam no Mac | Não havia Docker, e o Testcontainers precisa dele | Instalar o Docker Desktop | `docker info` tem de funcionar antes de `./mvnw verify` |
 | O primeiro push foi recusado | O token do `gh` não tinha a permissão `workflow`, que o GitHub exige para enviar ficheiros de `.github/workflows/` | `gh auth refresh -s workflow` | O GitHub protege os workflows porque correm código com acesso ao repositório |
 | Os 10 testes falharam todos de uma vez, até os que já passavam (passo 2) | O Docker Desktop estava fechado. O erro no relatório: `Previous attempts to find a Docker environment failed` | Abrir o Docker Desktop e correr de novo | Quando falham todos os testes ao mesmo tempo com `Failed to load ApplicationContext`, o problema costuma ser o ambiente, não o código. Ver o primeiro `Caused by` em `target/surefire-reports/` |
+| Testes do Marketplace com `RST_STREAM: Stream cancelled` (passo 3) | Em `http://` o cliente do JDK tenta HTTP/2 por upgrade (h2c), e o Jetty do WireMock corta os pedidos com corpo | `http2PlainDisabled(true)` na configuração do WireMock | Um erro só nos testes pode vir do servidor falso e não do código. As lojas reais são `https` |
+| O teste `live` do Chrome falhou com `Illegal character in path` (passo 3) | A loja redireciona para `/detail/director’s-cut-for-letter/{id}` com UTF-8 cru no cabeçalho `Location`; o JDK lê-o como ISO-8859-1 | O adaptador segue os redirecionamentos e codifica o URL (`%E2%80%99`) | As respostas gravadas não mostram tudo. Um teste contra o sistema real apanha o que elas escondem |
+| Um redirecionamento a mais a partir de Portugal (passo 3) | A Google manda primeiro para o consentimento de cookies (`consent.google.com`) | O mesmo ciclo de redirecionamentos, até 5 saltos | O que um servidor responde pode depender do país de onde se pede |
 
 ## As ferramentas em resumo
 
@@ -58,7 +66,12 @@ Do mais antigo para o mais recente.
 | Docker + Docker Compose | — | Correr o PostgreSQL sem o instalar | passo 1 |
 | Testcontainers | 2.0.5 | PostgreSQL verdadeiro e descartável nos testes | passo 1 |
 | JUnit, AssertJ, Mockito, MockMvc | 6.0 / 3.27 / 5.23 / — | Escrever e correr os testes | passo 1 |
-| GitHub Actions | — | CI: testes em cada push | passo 1 |
+| GitHub Actions | — | CI: testes em cada push; testes contra as lojas reais todas as semanas | passo 1 (semanal: passo 3) |
+| Spring RestClient + HttpClient do JDK | 7.0.9 / 25 | Pedidos HTTP às lojas | passo 3 |
+| `@ConfigurationProperties` | 4.1.1 | Configuração tipada (`extpulse.stores`) | passo 3 |
+| jsoup | 1.23.2 | Ler o HTML da página da Chrome Web Store | passo 3 |
+| WireMock | 3.13.2 | Servidor HTTP falso no lugar das lojas, nos testes | passo 3 |
+| Tags do JUnit (`@Tag`) | 6.0 | Separar os testes contra as lojas reais | passo 3 |
 | Git, GitHub e `gh` | — | Histórico do código e repositório remoto | passo 1 |
 | ADRs | — | Registar as decisões | passo 1 |
 
@@ -208,6 +221,68 @@ As versões das bibliotecas vêm do Spring Boot 4.1.1. Para as ver: `./mvnw depe
   código está no GitHub).
 - **Onde está:** `.github/workflows/ci.yml`.
 - **Em que já ajudou:** verde no primeiro push, o que prova que o projeto não depende do teu Mac.
+  No passo 3 juntou-se um segundo workflow, `live-stores.yml`, agendado (`schedule` com
+  `cron`) para as segundas: corre os testes contra as lojas reais.
+
+### Spring RestClient (com o HttpClient do JDK)
+
+- **O que é:** o cliente HTTP do Spring, com uma API fluente
+  (`http.get().uri(...).retrieve().body(Tipo.class)`). Converte o JSON da resposta
+  diretamente num `record`. Por baixo usa o `HttpClient` que vem com o Java.
+- **Porquê:** é o cliente recomendado pelo Spring para código síncrono, e não precisa de
+  biblioteca extra.
+- **Alternativa que ficou de fora:** `RestTemplate` (o antigo, em manutenção), `WebClient`
+  (reativo, para quem usa WebFlux), OkHttp ou Apache HttpClient (mais uma dependência).
+- **Onde está:** `StoreHttp.java` (timeouts e User-Agent) e nos três adaptadores.
+- **Em que já ajudou:** as respostas do Marketplace e do Open VSX passam a `record`s numa
+  linha. O `exchange(...)` deixou o adaptador do Chrome tratar os redirecionamentos à mão.
+
+### `@ConfigurationProperties`
+
+- **O que é:** liga um bloco do `application.yaml` a um `record` Java, com tipos
+  (`Duration`, `URI`) e validação ao arrancar.
+- **Porquê:** nada de URLs nem timeouts escritos no código, e um só objeto em vez de
+  vários `@Value`.
+- **Onde está:** `StoreProperties.java`, `StoreConfiguration.java`, bloco `extpulse.stores`.
+- **Em que já ajudou:** os testes trocam os três URLs pelo do WireMock só com um `new StoreProperties(...)`.
+
+### jsoup
+
+- **O que é:** uma biblioteca para ler HTML como uma árvore (`page.selectFirst("h1")`,
+  `page.text()`).
+- **Porquê:** a Chrome Web Store não tem API de estatísticas; os números estão no HTML.
+- **Alternativa que ficou de fora:** um browser automático (Playwright, Selenium), pesado
+  demais para três números que já vêm no HTML; expressões regulares sobre o HTML cru
+  (frágeis com tags pelo meio).
+- **Onde está:** `ChromeWebStoreSource.java`; versão em `<jsoup.version>` no `pom.xml`
+  (não é gerida pelo Spring Boot, por isso leva versão).
+- **Em que já ajudou:** o `text()` junta o texto visível sem os atributos, por isso a
+  média de outro item escondida num `aria-label` não engana o adaptador.
+
+### WireMock
+
+- **O que é:** um servidor HTTP falso para testes. Diz-se "quando pedirem isto, responde
+  aquilo" (incluindo erros, atrasos e redirecionamentos) e verifica-se o que foi pedido.
+- **Porquê:** testar os adaptadores sem internet, com respostas sempre iguais, e provocar
+  falhas que a loja real não dá quando queremos.
+- **Alternativa que ficou de fora:** `MockRestServiceServer` do Spring (não passa pela
+  rede, por isso não testa timeouts nem o cliente HTTP real); MockServer.
+- **Onde está:** `StoreTestSupport.java` e os `*SourceTests`; respostas gravadas em
+  `src/test/resources/wiremock/__files/`. Usa-se o jar `standalone`, que traz o seu
+  próprio Jetty e Jackson e não choca com os da app.
+- **Em que já ajudou:** 25 testes em menos de 3 segundos, incluindo timeout, erro 500 e
+  página mudada.
+
+### Tags do JUnit e `excludedGroups`
+
+- **O que é:** `@Tag("live")` marca testes; o Maven Surefire escolhe quais corre com
+  `groups` e `excludedGroups`.
+- **Porquê:** os testes contra as lojas reais dependem da internet e das lojas. Não podem
+  partir o build normal, mas têm de correr de vez em quando.
+- **Onde está:** `LiveStoreTests.java`; `<excludedGroups>live</excludedGroups>` no `pom.xml`;
+  `-Dgroups=live -DexcludedGroups=` no `live-stores.yml`.
+- **Em que já ajudou:** o primeiro teste `live` encontrou o bug do redirecionamento do
+  Chrome, que as respostas gravadas não mostravam.
 
 ### Git, GitHub e `gh`
 
@@ -231,9 +306,7 @@ Do documento do projeto, por passo. Cada ferramenta ganha a sua ficha quando ent
 
 | Ferramenta | Para quê | Passo |
 | --- | --- | --- |
-| Spring RestClient + Resilience4j | Pedidos às lojas com retry e timeout | 3 |
-| WireMock | Simular as lojas nos testes | 3 |
-| jsoup | Ler a página da Chrome Web Store | 3 |
+| Resilience4j | Retries com espera crescente e 1 pedido por segundo a cada loja | 4 |
 | `@Scheduled` (+ ShedLock mais tarde) | A recolha diária | 4 |
 | springdoc-openapi | Swagger gerado a partir do código | 5 |
 | JaCoCo | Cobertura de testes na CI | 5 |
