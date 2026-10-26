@@ -2,6 +2,7 @@ package com.mccprogrammer.extpulse.collection;
 
 import java.time.Duration;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -9,6 +10,7 @@ import com.mccprogrammer.extpulse.store.ListingNotFoundException;
 import com.mccprogrammer.extpulse.store.ListingStats;
 import com.mccprogrammer.extpulse.store.Store;
 import com.mccprogrammer.extpulse.store.StoreException;
+import com.mccprogrammer.extpulse.store.StoreReview;
 import com.mccprogrammer.extpulse.store.StoreSource;
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.ratelimiter.RateLimiter;
@@ -53,9 +55,16 @@ class ResilientStoreCalls {
 	}
 
 	ListingStats fetchStats(StoreSource source, String externalId) {
+		return call(source.store(), () -> source.fetchStats(externalId));
+	}
+
+	List<StoreReview> fetchReviews(StoreSource source, String externalId) {
+		return call(source.store(), () -> source.fetchReviews(externalId));
+	}
+
+	private <T> T call(Store store, Supplier<T> request) {
 		// Every attempt, retries included, waits for its turn with the store.
-		Supplier<ListingStats> paced = RateLimiter.decorateSupplier(this.paces.get(source.store()),
-				() -> source.fetchStats(externalId));
+		Supplier<T> paced = RateLimiter.decorateSupplier(this.paces.get(store), request);
 		return Retry.decorateSupplier(this.retry, paced).get();
 	}
 

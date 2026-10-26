@@ -59,6 +59,15 @@ class ChromeWebStoreSource implements StoreSource {
 		return List.of();
 	}
 
+	/**
+	 * Always empty for now. The reviews are on a separate page (/detail/{id}/reviews)
+	 * with no stable ID per review; reading them is left for later.
+	 */
+	@Override
+	public List<StoreReview> fetchReviews(String externalId) {
+		return List.of();
+	}
+
 	@Override
 	public ListingStats fetchStats(String externalId) {
 		if (!ITEM_ID.matcher(externalId).matches()) {

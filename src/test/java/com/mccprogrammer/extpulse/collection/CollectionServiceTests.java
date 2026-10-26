@@ -11,9 +11,11 @@ import java.util.Map;
 
 import com.mccprogrammer.extpulse.TestcontainersConfiguration;
 import com.mccprogrammer.extpulse.catalog.ListingRepository;
+import com.mccprogrammer.extpulse.reviews.ReviewWriter;
 import com.mccprogrammer.extpulse.store.ListingStats;
 import com.mccprogrammer.extpulse.store.Store;
 import com.mccprogrammer.extpulse.store.StoreException;
+import com.mccprogrammer.extpulse.store.StoreReview;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +46,9 @@ class CollectionServiceTests {
 
 	@Autowired
 	private SnapshotWriter snapshots;
+
+	@Autowired
+	private ReviewWriter reviews;
 
 	@Autowired
 	private JdbcClient jdbc;
@@ -140,7 +145,7 @@ class CollectionServiceTests {
 			.param("run", run.getId())
 			.query()
 			.listOfRows()).containsExactly(Map.of("listing_id", this.marketplaceListing, "store", "VS_MARKETPLACE",
-					"external_id", "MCCProgrammer.diff-checker", "message", "VS_MARKETPLACE: query failed"));
+					"external_id", "MCCProgrammer.diff-checker", "message", "stats: VS_MARKETPLACE: query failed"));
 	}
 
 	@Test
@@ -155,10 +160,67 @@ class CollectionServiceTests {
 			.satisfies(saved -> assertThat(saved.getStatus()).isEqualTo(CollectionRunStatus.FAILED));
 	}
 
+	@Test
+	void savesReviewsAndUpdatesThemInsteadOfAddingThem() {
+		this.marketplace.answers(new ListingStats(1764, null, 0, "0.3.0")).reviews(review("hard to see", null));
+		this.openVsx.answers(new ListingStats(1450, null, 0, "0.3.0"));
+		collectAt(MORNING);
+		String firstSeen = reviewColumn("first_seen_at");
+
+		this.marketplace.reviews(review("hard to see", "Thanks, fixed in 0.2.0"));
+		collectAt(MORNING.plus(Duration.ofDays(1)));
+
+		assertThat(this.jdbc.sql("SELECT count(*) FROM reviews").query(Long.class).single()).isEqualTo(1);
+		assertThat(reviewColumn("reply")).isEqualTo("Thanks, fixed in 0.2.0");
+		assertThat(reviewColumn("first_seen_at")).isEqualTo(firstSeen);
+	}
+
+	@Test
+	void anEditedReviewIsUnreadAgain() {
+		this.marketplace.answers(new ListingStats(1764, null, 0, "0.3.0")).reviews(review("hard to see", null));
+		this.openVsx.answers(new ListingStats(1450, null, 0, "0.3.0"));
+		collectAt(MORNING);
+		this.jdbc.sql("UPDATE reviews SET read_at = now()").update();
+
+		collectAt(MORNING.plus(Duration.ofHours(1)));
+		assertThat(reviewColumn("read_at")).isNotNull();
+
+		this.marketplace.reviews(review("hard to see, and now it crashes", null));
+		collectAt(MORNING.plus(Duration.ofHours(2)));
+		assertThat(reviewColumn("read_at")).isNull();
+	}
+
+	@Test
+	void whenReviewsFailTheDaysNumbersAreStillSaved() {
+		this.marketplace.answers(new ListingStats(1764, null, 0, "0.3.0"))
+			.reviewsFail(new StoreException(Store.VS_MARKETPLACE, "reviews 500"));
+		this.openVsx.answers(new ListingStats(1450, null, 0, "0.3.0"));
+
+		CollectionRun run = collectAt(MORNING);
+
+		assertThat(run.getStatus()).isEqualTo(CollectionRunStatus.PARTIAL);
+		assertThat(snapshotsOf(this.marketplaceListing)).hasSize(1);
+		assertThat(run.getErrors()).singleElement()
+			.satisfies((error) -> assertThat(error.message()).isEqualTo("reviews: VS_MARKETPLACE: reviews 500"));
+	}
+
+	private static StoreReview review(String text, String reply) {
+		return new StoreReview("326941", 1, text, "Reviewer 1", "0.1.1", Instant.parse("2026-01-29T15:11:13Z"), reply);
+	}
+
+	/** The one review's column as text, or null. */
+	private String reviewColumn(String column) {
+		List<String> values = this.jdbc.sql("SELECT " + column + "::text FROM reviews")
+			.query((row, number) -> row.getString(1))
+			.list();
+		assertThat(values).hasSize(1);
+		return values.getFirst();
+	}
+
 	private CollectionRun collectAt(Instant now) {
 		ResilientStoreCalls calls = new ResilientStoreCalls(
 				new CollectionProperties(2, Duration.ofMillis(1), Duration.ofMillis(1)));
-		CollectionService service = new CollectionService(this.listings, this.runs, this.snapshots, calls,
+		CollectionService service = new CollectionService(this.listings, this.runs, this.snapshots, this.reviews, calls,
 				List.of(this.marketplace, this.openVsx), Clock.fixed(now, LISBON));
 		return service.collect();
 	}

@@ -3,7 +3,7 @@
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
 
-> **Status:** in development. Accounts, publishers and stats work through the REST API, and the daily collection runs on its own. Reviews are next.
+> **Status:** in development. Accounts, publishers, stats and a reviews inbox work through the REST API, and the daily collection runs on its own. Alerts are next.
 
 ## Why
 
@@ -88,6 +88,8 @@ curl "localhost:8080/api/extensions/1/stats?from=2026-10-01&granularity=week" -H
 | POST | `/api/extensions/{id}/listings` | Add a listing by its store ID (for example a Chrome item ID) |
 | GET | `/api/extensions` | Installs today and gain over 7 days, per extension and store |
 | GET | `/api/extensions/{id}/stats` | Installs over time: `from`, `to` (ISO dates), `granularity=day\|week` |
+| GET | `/api/reviews` | Reviews from every store, newest first: `unread`, `unanswered`, `maxRating`, `store`, `extensionId`, `limit`, `offset` |
+| PATCH | `/api/reviews/{id}` | Mark a review as read: `{"read": true}` |
 | POST | `/api/admin/collect` | Run the collection now (admins) |
 
 Errors come back as [Problem Details](https://www.rfc-editor.org/rfc/rfc9457) JSON.

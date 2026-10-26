@@ -1,0 +1,65 @@
+{
+ "reviews": [
+  {
+   "id": 341953,
+   "userId": "00000000-0000-0000-0000-000000000001",
+   "userDisplayName": "Reviewer 1",
+   "updatedDate": "2026-08-21T12:51:39.217Z",
+   "rating": 5,
+   "text": "nice",
+   "productVersion": "12.4.0",
+   "isDeleted": false,
+   "isIgnored": false,
+   "reCaptchaToken": null
+  },
+  {
+   "id": 339250,
+   "userId": "00000000-0000-0000-0000-000000000002",
+   "userDisplayName": "Reviewer 2",
+   "updatedDate": "2026-07-05T04:46:35.48Z",
+   "rating": 1,
+   "text": "Don't automatically format if I don't want to format it.",
+   "productVersion": "12.4.0",
+   "isDeleted": false,
+   "isIgnored": false,
+   "reCaptchaToken": null
+  },
+  {
+   "id": 330301,
+   "userId": "00000000-0000-0000-0000-000000000003",
+   "userDisplayName": "Reviewer 3",
+   "updatedDate": "2026-03-13T09:45:51.7Z",
+   "rating": 2,
+   "text": "It \"destroys\" my Markdown files. There are no options to configure rues for Markdown files.  It forces/changes *italic* to _italic_ for example.\n\nUsing markdownlint and a set of my own rules e.g. use consistent *italic* ...",
+   "productVersion": "12.3.0",
+   "isDeleted": false,
+   "isIgnored": false,
+   "reCaptchaToken": null
+  },
+  {
+   "id": 329046,
+   "userId": "00000000-0000-0000-0000-000000000004",
+   "userDisplayName": "Reviewer 4",
+   "updatedDate": "2026-02-27T14:07:25.03Z",
+   "rating": 5,
+   "productVersion": "12.3.0",
+   "isDeleted": false,
+   "isIgnored": false,
+   "reCaptchaToken": null
+  },
+  {
+   "id": 326512,
+   "userId": "00000000-0000-0000-0000-000000000005",
+   "userDisplayName": "Reviewer 5",
+   "updatedDate": "2026-01-24T07:31:55.373Z",
+   "rating": 1,
+   "text": "This is a really bad HTML code formatting plugin. I've never seen anything worse; the default one works much better!",
+   "productVersion": "12.3.0",
+   "isDeleted": false,
+   "isIgnored": false,
+   "reCaptchaToken": null
+  }
+ ],
+ "totalReviewCount": 492,
+ "hasMoreReviews": true
+}
