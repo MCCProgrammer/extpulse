@@ -3,7 +3,7 @@
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
 
-> **Status:** in development. The daily collection works end to end (schema, store adapters, scheduled job); stats and the REST API are next.
+> **Status:** in development. The daily collection works end to end, and accounts can register and log in. The catalog and stats API is next.
 
 ## Why
 
@@ -27,6 +27,7 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | --- | --- |
 | Language | Java 25 |
 | Framework | Spring Boot 4.1 (Web MVC, Data JPA, Validation, Actuator) |
+| Security | Spring Security: BCrypt passwords, stateless JWT login (OAuth2 resource server) |
 | Database | PostgreSQL 17, schema managed by Flyway |
 | Build | Maven (through the Maven Wrapper, `./mvnw`) |
 | Store clients | Spring RestClient (JDK HttpClient), jsoup for the Chrome Web Store page |
@@ -54,6 +55,23 @@ curl http://localhost:8080/actuator/health   # {"status":"UP"}
 # Only the tests against the real stores (left out of the normal build)
 ./mvnw test -Dgroups=live -DexcludedGroups=
 ```
+
+### Try the API
+
+```bash
+# Create an account and log in
+curl -X POST localhost:8080/api/auth/register -H 'Content-Type: application/json' \
+  -d '{"email": "you@example.com", "password": "at least 10 characters"}'
+curl -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' \
+  -d '{"email": "you@example.com", "password": "at least 10 characters"}'
+
+# Use the token from the login answer
+curl localhost:8080/api/me -H 'Authorization: Bearer <token>'
+```
+
+Errors come back as [Problem Details](https://www.rfc-editor.org/rfc/rfc9457) JSON.
+In production, set `EXTPULSE_AUTH_JWT_SECRET` (32+ bytes); without it, tokens stop
+working when the app restarts.
 
 ## Project structure
 

@@ -70,7 +70,7 @@ saber como os dados são gravados. As entidades entram no passo 4, e quem as cri
 partir de um `ListingStats` é a recolha.
 
 **O que ficou de fora deste passo, e porquê:**
-- **Avaliações (`fetchReviews`):** entram no passo 6, com a tabela `reviews`.
+- **Avaliações (`fetchReviews`):** entram no passo 7, com a tabela `reviews`.
 - **Retries e ritmo de 1 pedido por segundo:** entram no passo 4. É a recolha que sabe
   quantos pedidos vai fazer e se vale a pena repetir. Um adaptador faz uma tentativa,
   com timeout, e diz o que aconteceu ([ADR 0005](../decisions/0005-store-adapters.md)).
@@ -121,7 +121,7 @@ Tudo foi testado contra as lojas reais antes de escrever código.
 - **Página mudada:** há `<h1>` mas não há "users" ou "out of 5" → `StoreException` com
   "has the page changed?". Nunca grava um zero falso.
 - **Sem descoberta:** a loja não pesquisa por publisher. As listings do Chrome entram
-  pelo ID (um endpoint da API, no passo 5).
+  pelo ID (um endpoint da API, no passo 6).
 - **Redirecionamentos:** ver 3.6.
 
 ## 3.4 Configuração

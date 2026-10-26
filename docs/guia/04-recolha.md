@@ -12,7 +12,7 @@ com as tuas 12 listings reais: 12 recolhidas, 0 falhas, em 6 segundos. 47 testes
 | Ficheiro | O que é | Porquê |
 | --- | --- | --- |
 | `catalog/package-info.java` | Pacote novo `catalog` | Publishers, extensões e listings são lidos por vários pacotes (recolha, estatísticas, página pública); não pertencem a nenhum deles |
-| `catalog/Listing.java` | Primeira entidade JPA, mapeada para `listings` | A recolha precisa de saber que listings existem. Só leitura por agora: as listings são criadas pela API no passo 5 |
+| `catalog/Listing.java` | Primeira entidade JPA, mapeada para `listings` | A recolha precisa de saber que listings existem. Só leitura por agora: as listings são criadas pela API no passo 6 |
 | `catalog/ListingRepository.java` | Repositório Spring Data | `findAll(Sort.by("id"))` sem escrever SQL |
 | `TimeConfiguration.java` (pacote raiz) | Um `Clock` para toda a app, em `extpulse.zone` | "Hoje" é o dia em Lisboa. Os testes trocam o relógio por um fixo |
 | `collection/CollectionProperties.java` | `record` com tentativas, espera inicial e intervalo por loja | Configurável no `application.yaml`; os testes usam milissegundos |
@@ -23,7 +23,7 @@ com as tuas 12 listings reais: 12 recolhidas, 0 falhas, em 6 segundos. 47 testes
 | `collection/CollectionRunRepository.java` | Repositório das execuções | Gravar e ler execuções |
 | `collection/SnapshotWriter.java` | O `INSERT ... ON CONFLICT DO UPDATE` | A gravação idempotente; SQL direto, porque o JPA não faz upserts |
 | `collection/ResilientStoreCalls.java` | Retries e ritmo por loja, com Resilience4j | Uma falha momentânea não perde o dia, e nenhuma loja recebe pedidos a mais |
-| `collection/CollectionService.java` | `collect()`: o ciclo pelas listings | O coração do passo. `public`, porque o passo 5 vai chamá-lo por um endpoint de admin |
+| `collection/CollectionService.java` | `collect()`: o ciclo pelas listings | O coração do passo. `public`, porque o passo 6 vai chamá-lo por um endpoint de admin |
 | `collection/DailyCollectionJob.java` | `@Scheduled(cron = ..., zone = ...)` que chama `collect()` | Separado do serviço: o agendamento é só um dos sítios de onde se chama a recolha |
 
 ### Base de dados, configuração e build
@@ -116,7 +116,7 @@ verão. As datas e horas guardam-se sempre em UTC (`timestamptz`). Só o *dia* d
 `Listing` e `CollectionRun` são entidades JPA: o Spring Data dá os repositórios sem
 código. O upsert é SQL direto com `JdbcClient`, porque o JPA não tem "insere ou
 atualiza" numa só instrução. Em entrevista: *usa-se JPA para o modelo e SQL onde o SQL é
-o ponto*. As estatísticas do passo 5 (com `LAG`) vão pelo mesmo caminho.
+o ponto*. As estatísticas do passo 6 (com `LAG`) vão pelo mesmo caminho.
 
 **Truques do mapeamento:**
 - Não há `@Column(name = ...)`: o Spring Boot converte `externalId` em `external_id` sozinho.
@@ -135,15 +135,15 @@ histórico.
 
 ## 4.4 O que ficou para depois
 
-- **Endpoint `POST /api/admin/collect`** (correr à mão): passo 5, com a API.
-- **Avaliações:** passo 6.
+- **Endpoint `POST /api/admin/collect`** (correr à mão): passo 6, com a API.
+- **Avaliações:** passo 7.
 - **Alertas no fim de cada execução:** passo 8.
 - **ShedLock** (só uma instância a recolher): quando houver mais do que um servidor.
-- **Juntar listings sem SQL:** passo 5 (`POST /api/publishers` faz a descoberta e cria-as).
+- **Juntar listings sem SQL:** passo 6 (`POST /api/publishers` faz a descoberta e cria-as).
 
 **Uma coisa que os dados reais mostraram:** o Markify no Marketplace tinha 179 installs
 numa consulta e 177 meia hora depois. O número de installs pode descer (desinstalações). As estatísticas
-do passo 5 têm de aceitar ganhos negativos.
+do passo 6 têm de aceitar ganhos negativos.
 
 ## 4.5 Experimentar com as lojas reais
 
