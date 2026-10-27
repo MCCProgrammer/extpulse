@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import javax.crypto.spec.SecretKeySpec;
 
@@ -160,7 +161,7 @@ class AuthApiTests {
 	void rejectsATokenSignedWithAnotherKey() throws Exception {
 		JwtEncoder otherKey = new NimbusJwtEncoder(new ImmutableSecret<>(new SecretKeySpec(
 				"a different key, also 32+ bytes long".getBytes(StandardCharsets.UTF_8), "HmacSHA256")));
-		TokenService forger = new TokenService(otherKey, new AuthProperties("", Duration.ofHours(1)),
+		TokenService forger = new TokenService(otherKey, new AuthProperties("", Duration.ofHours(1), true, List.of()),
 				Clock.systemUTC());
 
 		this.mvc.perform(get("/api/me").header("Authorization", "Bearer " + forger.issue(registeredAccount()).value()))
@@ -197,7 +198,8 @@ class AuthApiTests {
 	}
 
 	private String tokenFor(UserAccount account, Clock clock) {
-		return new TokenService(this.encoder, new AuthProperties("", Duration.ofHours(1)), clock).issue(account)
+		return new TokenService(this.encoder, new AuthProperties("", Duration.ofHours(1), true, List.of()), clock)
+			.issue(account)
 			.value();
 	}
 

@@ -29,10 +29,14 @@ class AccountService {
 	// password and response times don't reveal which emails have accounts.
 	private final String unknownAccountHash;
 
-	AccountService(UserAccountRepository accounts, PasswordEncoder passwordEncoder, TokenService tokens) {
+	private final AuthProperties properties;
+
+	AccountService(UserAccountRepository accounts, PasswordEncoder passwordEncoder, TokenService tokens,
+			AuthProperties properties) {
 		this.accounts = accounts;
 		this.passwordEncoder = passwordEncoder;
 		this.tokens = tokens;
+		this.properties = properties;
 		this.unknownAccountHash = passwordEncoder.encode("no account has this password");
 	}
 
@@ -42,6 +46,11 @@ class AccountService {
 					HttpStatus.BAD_REQUEST, "The password is longer than " + MAX_PASSWORD_BYTES + " bytes"), null);
 		}
 		String normalizedEmail = email.strip().toLowerCase(Locale.ROOT);
+		if (!this.properties.mayRegister(normalizedEmail)) {
+			throw new ErrorResponseException(HttpStatus.FORBIDDEN,
+					ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Registration is closed on this server"),
+					null);
+		}
 		if (this.accounts.findByEmail(normalizedEmail).isPresent()) {
 			throw new EmailAlreadyRegisteredException();
 		}
