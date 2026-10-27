@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('Stats for VS Code and Chrome extensions')}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('home')}"></header>
+	<main>
+		<section class="hero">
+			<h1>Every store's numbers for your extensions, in one place, every day.</h1>
+			<p class="lede">
+				ExtPulse reads the VS Code Marketplace, Open VSX and the Chrome Web Store once a day, keeps the history
+				the stores don't, and tells you when something happens.
+			</p>
+			<div class="actions">
+				<a class="button" href="/login">Sign in</a>
+				<a class="button secondary" href="/swagger-ui.html">Explore the API</a>
+			</div>
+		</section>
+
+		<section class="features" aria-label="What it does">
+			<div class="card">
+				<h2>Combined totals</h2>
+				<p>The same extension on the Marketplace and Open VSX, added up, with daily and weekly gains per store.</p>
+			</div>
+			<div class="card">
+				<h2>One review inbox</h2>
+				<p>New reviews from every store in one list, with what is unread and what still needs a reply.</p>
+			</div>
+			<div class="card">
+				<h2>Alerts</h2>
+				<p>A low rating, an install spike, a new version or a weekly summary, by email or on Discord.</p>
+			</div>
+			<div class="card">
+				<h2>Public page and badges</h2>
+				<p>A portfolio page of your extensions and an installs badge for your READMEs, if you want them.</p>
+			</div>
+		</section>
+	</main>
+	<footer th:replace="~{fragments :: footer}"></footer>
+</body>
+
+</html>

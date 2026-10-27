@@ -6,7 +6,7 @@
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
 
-> **Status:** in development. Accounts, publishers, stats, a reviews inbox and alerts (email and Discord) work through the REST API, and the daily collection runs on its own. The production setup and automatic deploys are ready; the server is being created.
+> **Status:** in development. Accounts, publishers, stats, a reviews inbox and alerts (email and Discord) work through the REST API and a server-rendered dashboard, with an opt-in public page and README badges. The daily collection runs on its own. The production setup and automatic deploys are ready; the server is being created.
 
 ## Why
 
@@ -30,7 +30,8 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | --- | --- |
 | Language | Java 25 |
 | Framework | Spring Boot 4.1 (Web MVC, Data JPA, Validation, Actuator) |
-| Security | Spring Security: BCrypt passwords, stateless JWT login (OAuth2 resource server) |
+| Security | Spring Security: BCrypt passwords; stateless JWT for the API (OAuth2 resource server); form login with a session, CSRF and a Content Security Policy for the website |
+| Website | Thymeleaf pages with charts drawn as SVG on the server (no JavaScript) |
 | API docs | springdoc-openapi (OpenAPI 3, Swagger UI at `/swagger-ui.html`) |
 | Database | PostgreSQL 17, schema managed by Flyway |
 | Build | Maven (through the Maven Wrapper, `./mvnw`) |
@@ -82,6 +83,12 @@ docker run -p 8080:8080 \
 CI publishes every build of `main` as `ghcr.io/mccprogrammer/extpulse:latest` and
 `:sha-<commit>`. All configuration comes from environment variables; nothing secret is
 in the image.
+
+### Use the website
+
+With the app running, open <http://localhost:8080>: create an account at `/register`
+and sign in. The dashboard is at `/app`; Settings turns on the public page
+(`/p/<address>`) and its installs badges.
 
 ### Try the API
 
@@ -140,11 +147,14 @@ src/main/java/com/mccprogrammer/extpulse/
 ├── stats/        totals and gains read from the snapshots
 ├── reviews/      reviews from every store
 ├── alerts/       alert rules and sending
-├── publicpage/   public page and badge
-└── auth/         accounts and JWT
+├── publicpage/   home page, public page and badges
+└── auth/         accounts, JWT for the API, sign-in for the website
+(each feature package also has its pages: CatalogPages, DashboardPages, ...)
 src/main/resources/
 ├── application.yaml           configuration
-└── db/migration/              Flyway migrations (V1__..., V2__...)
+├── db/migration/              Flyway migrations (V1__..., V2__...)
+├── templates/                 Thymeleaf pages, one folder per feature
+└── static/                    the stylesheet and the icon
 compose.yaml                   local PostgreSQL, and Mailpit for alert emails
 .github/workflows/ci.yml       build, tests, image and deploy on every push
 .github/workflows/live-stores.yml  weekly test against the real stores

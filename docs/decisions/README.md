@@ -20,3 +20,4 @@ changes gets a new record that replaces the old one.
 | [0012](0012-quality-gates.md) | Quality gates: formatting, static analysis, secrets and dependencies |
 | [0013](0013-oracle-cloud-terraform.md) | Infrastructure on Oracle Cloud Always Free, with Terraform |
 | [0014](0014-deploy-and-operations.md) | Deploy and operations: Compose on the server, deploys from CI |
+| [0015](0015-website.md) | The website: Thymeleaf pages in the same app, signed in with a session |

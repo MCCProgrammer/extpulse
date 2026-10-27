@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('Settings')}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('settings')}"></header>
+	<main>
+		<h1>Settings</h1>
+		<p class="lede" th:text="'Signed in as ' + ${currentUser.email()}">Signed in as</p>
+		<div th:replace="~{fragments :: flash}"></div>
+
+		<div class="card">
+			<h2>Public page</h2>
+			<p>
+				Your extensions and their installs on a page anyone can open, with an installs badge for your READMEs.
+				Reviews, alerts and your email stay private. Leave the address empty to turn the page off.
+			</p>
+			<form class="row" method="post" th:action="@{/app/settings/public-page}">
+				<label>Address
+					<input name="slug" th:value="${slug}" placeholder="your-name" maxlength="40"
+						pattern="[a-z0-9]([a-z0-9\-]{0,38}[a-z0-9])?">
+				</label>
+				<button type="submit">Save</button>
+			</form>
+			<div th:unless="${slug.isEmpty()}">
+				<p class="muted">
+					Page: <a th:href="@{/p/{slug}(slug=${slug})}" th:text="@{/p/{slug}(slug=${slug})}">/p/name</a>
+				</p>
+				<div class="badge-preview">
+					<img th:src="@{/p/{slug}/badge.svg(slug=${slug})}" alt="Total installs badge">
+					<code th:text="'![Installs](' + ${baseUrl} + '/p/' + ${slug} + '/badge.svg)'">markdown</code>
+				</div>
+			</div>
+		</div>
+	</main>
+</body>
+
+</html>

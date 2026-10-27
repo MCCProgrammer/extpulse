@@ -30,6 +30,8 @@ public class UserAccount {
 	@Enumerated(EnumType.STRING)
 	private Role role;
 
+	private String publicSlug;
+
 	@Column(insertable = false, updatable = false)
 	private Instant createdAt;
 
@@ -56,6 +58,15 @@ public class UserAccount {
 
 	public Role getRole() {
 		return this.role;
+	}
+
+	/** The address of the public page, or {@code null} while the account has none. */
+	public String getPublicSlug() {
+		return this.publicSlug;
+	}
+
+	void setPublicSlug(String publicSlug) {
+		this.publicSlug = publicSlug;
 	}
 
 	public Instant getCreatedAt() {

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('Alerts')}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('alerts')}"></header>
+	<main>
+		<h1>Alerts</h1>
+		<p class="lede">Checked after every collection. Each alert is sent once.</p>
+		<div th:replace="~{fragments :: flash}"></div>
+
+		<div class="table-wrap" th:unless="${rules.isEmpty()}">
+			<table>
+				<thead>
+					<tr>
+						<th scope="col">When</th>
+						<th scope="col">Where</th>
+						<th scope="col"><span class="muted">Actions</span></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="rule : ${rules}">
+						<td>
+							<span th:replace="~{alerts/parts :: when(${rule.type().name()}, ${rule.threshold()})}">when</span>
+						</td>
+						<td>
+							<span class="chip" th:text="${rule.channel().name() == 'DISCORD'} ? 'Discord' : 'Email'">Email</span>
+							<code th:text="${rule.target()}">target</code>
+						</td>
+						<td>
+							<div class="actions">
+								<form class="inline-form" method="post" th:action="@{/app/alerts/{id}/test(id=${rule.id()})}">
+									<button class="secondary" type="submit">Send a test</button>
+								</form>
+								<form class="inline-form" method="post" th:action="@{/app/alerts/{id}/delete(id=${rule.id()})}">
+									<button class="secondary" type="submit">Delete</button>
+								</form>
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<p class="card empty" th:if="${rules.isEmpty()}">No alerts yet.</p>
+
+		<h2>New alert</h2>
+		<div class="card">
+			<form class="stack" method="post" th:action="@{/app/alerts}">
+				<label>When
+					<select name="type" required>
+						<option value="LOW_RATING">A review with few stars</option>
+						<option value="INSTALL_SPIKE">An unusual day of installs</option>
+						<option value="NEW_VERSION">A new version on a store</option>
+						<option value="COLLECTION_FAILING">No new numbers for 2 days</option>
+						<option value="WEEKLY_SUMMARY">Every Monday: the week's summary</option>
+					</select>
+				</label>
+				<label>Threshold, optional
+					<input name="threshold" type="number" min="1" placeholder="Stars or less (default 2), or installs a day (default 10)">
+				</label>
+				<label>Send by
+					<select name="channel" required>
+						<option value="EMAIL">Email</option>
+						<option value="DISCORD">Discord</option>
+					</select>
+				</label>
+				<label>To
+					<input name="target" maxlength="500" placeholder="Empty for your account's email, or a Discord webhook URL">
+				</label>
+				<div class="actions"><button type="submit">Add alert</button></div>
+			</form>
+		</div>
+	</main>
+	<footer th:replace="~{fragments :: footer}"></footer>
+
+</body>
+
+</html>

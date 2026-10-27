@@ -3,14 +3,18 @@ package com.mccprogrammer.extpulse;
 import com.jayway.jsonpath.JsonPath;
 
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Accounts for API tests, made through the real register and login endpoints.
+ * Accounts for tests, made through the real register and login endpoints: a token for the
+ * API, or a signed-in session for the website.
  */
 public final class TestAccounts {
 
@@ -32,6 +36,29 @@ public final class TestAccounts {
 		jdbc.sql("UPDATE users SET role = 'ADMIN' WHERE email = :email").param("email", email).update();
 		// A new login, so the token carries the new role.
 		return login(mvc, email);
+	}
+
+	/** Registers the account and signs in with the website's form. */
+	public static MockHttpSession sessionFor(MockMvc mvc, String email) throws Exception {
+		tokenFor(mvc, email);
+		return signIn(mvc, email);
+	}
+
+	/** Registers the account, makes it an admin and signs in with the website's form. */
+	public static MockHttpSession adminSessionFor(MockMvc mvc, JdbcClient jdbc, String email) throws Exception {
+		tokenFor(mvc, email);
+		jdbc.sql("UPDATE users SET role = 'ADMIN' WHERE email = :email").param("email", email).update();
+		return signIn(mvc, email);
+	}
+
+	private static MockHttpSession signIn(MockMvc mvc, String email) throws Exception {
+		return (MockHttpSession) mvc
+			.perform(post("/login").param("email", email).param("password", PASSWORD).with(csrf()))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/app"))
+			.andReturn()
+			.getRequest()
+			.getSession(false);
 	}
 
 	public static long idOf(JdbcClient jdbc, String email) {

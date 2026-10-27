@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('Catalog')}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('catalog')}"></header>
+	<main>
+		<h1>Catalog</h1>
+		<p class="lede">What you track. New extensions get their first numbers in the next collection.</p>
+		<div th:replace="~{fragments :: flash}"></div>
+
+		<div class="grid-2">
+			<div class="card">
+				<h2>Add a publisher</h2>
+				<p class="muted">Finds the publisher on the VS Code Marketplace and Open VSX, and adds all its extensions.</p>
+				<form class="stack" method="post" th:action="@{/app/catalog/publishers}">
+					<label>Publisher name
+						<input name="name" required maxlength="100" placeholder="MCCProgrammer">
+					</label>
+					<div class="actions"><button type="submit">Find and add</button></div>
+				</form>
+			</div>
+
+			<div class="card">
+				<h2>Your publishers</h2>
+				<p class="muted" th:if="${publishers.isEmpty()}">None yet.</p>
+				<ul th:unless="${publishers.isEmpty()}">
+					<li th:each="publisher : ${publishers}" th:text="${publisher.name}">publisher</li>
+				</ul>
+			</div>
+		</div>
+
+		<h2>Extensions the stores can't find by publisher</h2>
+		<p class="muted">The Chrome Web Store has no search by publisher: add the extension, then its item ID (the
+			32 letters at the end of its store address).</p>
+		<div class="grid-2" th:unless="${publishers.isEmpty()}">
+			<div class="card">
+				<h2>1. New extension</h2>
+				<form class="stack" method="post" th:action="@{/app/catalog/extensions}">
+					<label>Publisher
+						<select name="publisherId" required>
+							<option th:each="publisher : ${publishers}" th:value="${publisher.id}" th:text="${publisher.name}">publisher</option>
+						</select>
+					</label>
+					<label>Name
+						<input name="displayName" required maxlength="200">
+					</label>
+					<div class="actions"><button type="submit">Add extension</button></div>
+				</form>
+			</div>
+			<div class="card">
+				<h2>2. Where it is published</h2>
+				<form class="stack" method="post" th:action="@{/app/catalog/listings}">
+					<label>Extension
+						<select name="extensionId" required>
+							<option th:each="extension : ${extensions}" th:value="${extension.id}" th:text="${extension.displayName}">extension</option>
+						</select>
+					</label>
+					<label>Store
+						<select name="store" required>
+							<option th:each="store : ${stores}" th:value="${store.name()}" th:text="${store.displayName()}"
+								th:selected="${store.name() == 'CHROME_WEB_STORE'}">store</option>
+						</select>
+					</label>
+					<label>ID on the store
+						<input name="externalId" required maxlength="200" placeholder="abcdefghijklmnopabcdefghijklmnop">
+					</label>
+					<div class="actions"><button type="submit">Add listing</button></div>
+				</form>
+			</div>
+		</div>
+		<p class="card muted" th:if="${publishers.isEmpty()}">Add a publisher first.</p>
+	</main>
+	<footer th:replace="~{fragments :: footer}"></footer>
+</body>
+
+</html>

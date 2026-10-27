@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head(${series.displayName()})}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('overview')}"></header>
+	<main>
+		<p><a href="/app">← Overview</a></p>
+		<div class="page-head">
+			<div>
+				<h1 th:text="${series.displayName()}">Extension</h1>
+				<p class="lede" th:if="${overview != null}" th:text="${overview.publisher()}">publisher</p>
+			</div>
+			<!-- The range: links, so each view has its own address. -->
+			<nav class="segmented" aria-label="Range">
+				<a th:each="range : ${ {30, 90, 365} }" th:href="@{/app/extensions/{id}(id=${series.extensionId()},days=${range})}"
+					th:attr="aria-current=${range == days} ? 'true'" th:text="${range == 365} ? '1 year' : ${range} + ' days'">30 days</a>
+			</nav>
+		</div>
+
+		<div class="tiles" th:if="${overview != null}">
+			<div class="tile">
+				<div class="tile-label">Installs, all stores</div>
+				<div class="tile-value" th:text="${#numbers.formatInteger(overview.installs(), 1, 'COMMA')}">0</div>
+			</div>
+			<div class="tile">
+				<div class="tile-label">Gained in the last 7 days</div>
+				<div class="tile-value"
+					th:classappend="${overview.weekGain() != null and overview.weekGain() > 0} ? 'gain-up' : (${overview.weekGain() != null and overview.weekGain() < 0} ? 'gain-down')"
+					th:text="${overview.weekGain() == null} ? '–' : ((${overview.weekGain() > 0} ? '+' : '') + ${#numbers.formatInteger(overview.weekGain(), 1, 'COMMA')})">
+					+0</div>
+			</div>
+		</div>
+
+		<h2>Installs</h2>
+		<div class="card">
+			<p class="empty" th:unless="${installsChart.drawn()}">
+				Not enough days collected yet. The collection runs every day at 06:00 (Lisbon).
+			</p>
+			<svg class="chart" th:if="${installsChart.drawn()}" role="img"
+				th:attr="viewBox=|0 0 ${frame.width()} ${frame.height()}|,aria-label=|Installs of ${series.displayName()} from ${series.from()} to ${series.to()}|">
+				<g th:each="tick : ${installsChart.yTicks()}">
+					<line class="grid" th:x1="${frame.left()}" th:x2="${frame.right()}" th:y1="${tick.at()}" th:y2="${tick.at()}"></line>
+					<text class="tick" text-anchor="end" th:x="${frame.left() - 8}" th:y="${tick.at() + 4}" th:text="${tick.label()}">0</text>
+				</g>
+				<text class="tick" th:each="tick, it : ${installsChart.xTicks()}" th:x="${tick.at()}" th:y="${frame.height() - 8}"
+					th:attr="text-anchor=${it.first} ? 'start' : (${it.last} ? 'end' : 'middle')" th:text="${tick.label()}">day</text>
+				<path class="line" th:d="${installsChart.path()}"></path>
+				<circle class="end-dot" r="4" th:cx="${installsChart.endX()}" th:cy="${installsChart.endY()}"></circle>
+				<text class="end-label" text-anchor="end" th:x="${installsChart.endX()}" th:y="${installsChart.endLabelY()}"
+					th:text="${installsChart.endLabel()}">0</text>
+				<!-- One area per day: hovering it shows the day's line, dot and numbers. -->
+				<g class="hit" th:each="hit : ${installsChart.hits()}">
+					<title th:text="${hit.title()}">day: installs</title>
+					<rect class="hit-area" th:x="${hit.left()}" th:width="${hit.width()}" th:y="${frame.top()}"
+						th:height="${frame.bottom() - frame.top()}"></rect>
+					<line class="crosshair" th:x1="${hit.x()}" th:x2="${hit.x()}" th:y1="${frame.top()}" th:y2="${frame.bottom()}"></line>
+					<circle class="hover-dot" r="4" th:cx="${hit.x()}" th:cy="${hit.y()}"></circle>
+				</g>
+			</svg>
+		</div>
+
+		<h2>Installs gained each day</h2>
+		<div class="card">
+			<p class="empty" th:unless="${gainsChart.drawn()}">A gain shows from the second day collected.</p>
+			<svg class="chart" th:if="${gainsChart.drawn()}" role="img"
+				th:attr="viewBox=|0 0 ${frame.width()} ${frame.height()}|,aria-label=|Installs gained each day by ${series.displayName()}|">
+				<g th:each="tick : ${gainsChart.yTicks()}">
+					<line class="grid" th:x1="${frame.left()}" th:x2="${frame.right()}" th:y1="${tick.at()}" th:y2="${tick.at()}"></line>
+					<text class="tick" text-anchor="end" th:x="${frame.left() - 8}" th:y="${tick.at() + 4}" th:text="${tick.label()}">0</text>
+				</g>
+				<line class="baseline" th:x1="${frame.left()}" th:x2="${frame.right()}" th:y1="${gainsChart.zeroY()}" th:y2="${gainsChart.zeroY()}"></line>
+				<text class="tick" th:each="tick, it : ${gainsChart.xTicks()}" th:x="${tick.at()}" th:y="${frame.height() - 8}"
+					th:attr="text-anchor=${it.first} ? 'start' : (${it.last} ? 'end' : 'middle')" th:text="${tick.label()}">day</text>
+				<g class="hit" th:each="column : ${gainsChart.columns()}">
+					<title th:text="${column.title()}">day: gain</title>
+					<rect class="hit-area" th:x="${column.left()}" th:width="${column.width()}" th:y="${frame.top()}"
+						th:height="${frame.bottom() - frame.top()}"></rect>
+					<path class="column" th:d="${column.path()}"></path>
+				</g>
+			</svg>
+		</div>
+
+		<details th:unless="${series.points().isEmpty()}">
+			<summary>The numbers, as a table</summary>
+			<div class="table-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th scope="col">Day</th>
+							<th scope="col" class="num">Installs</th>
+							<th scope="col" class="num">Gained</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:each="point : ${series.points()}">
+							<td th:text="${#temporals.format(point.date(), 'EEE d MMM yyyy')}">day</td>
+							<td class="num" th:text="${#numbers.formatInteger(point.installs(), 1, 'COMMA')}">0</td>
+							<td th:replace="~{stats/parts :: gain(${point.gain()})}">+0</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</details>
+
+		<th:block th:if="${overview != null}">
+			<h2>Stores</h2>
+			<div class="table-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th scope="col">Store</th>
+							<th scope="col" class="num">Installs</th>
+							<th scope="col" class="num">Last 7 days</th>
+							<th scope="col" class="num">Rating</th>
+							<th scope="col">Version</th>
+							<th scope="col">Collected</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:each="listing : ${overview.listings()}">
+							<td>
+								<a th:href="${listing.url()}" th:text="${listing.store().displayName()}" rel="noopener">Store</a>
+								<div class="muted"><code th:text="${listing.externalId()}">id</code></div>
+							</td>
+							<td class="num"
+								th:text="${listing.installs() == null} ? '–' : ${#numbers.formatInteger(listing.installs(), 1, 'COMMA')}">0</td>
+							<td th:replace="~{stats/parts :: gain(${listing.weekGain()})}">+0</td>
+							<td class="num"
+								th:text="${listing.ratingAvg() == null} ? '–' : ${#numbers.formatDecimal(listing.ratingAvg(), 1, 2, 'POINT')} + ' (' + ${listing.ratingCount()} + ')'">
+								4.50 (2)</td>
+							<td th:text="${listing.version() ?: '–'}">1.0.0</td>
+							<td th:text="${listing.lastCollectedOn() == null} ? 'Not yet' : ${#temporals.format(listing.lastCollectedOn(), 'd MMM')}">day</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</th:block>
+
+		<h2>Badge</h2>
+		<div class="card">
+			<th:block th:if="${slug != null}">
+				<p>This extension's installs across its stores, for its README:</p>
+				<div class="badge-preview">
+					<img th:src="@{/p/{slug}/extensions/{id}/badge.svg(slug=${slug},id=${series.extensionId()})}" alt="Installs badge">
+					<code th:text="'![Installs](' + ${baseUrl} + '/p/' + ${slug} + '/extensions/' + ${series.extensionId()} + '/badge.svg)'">markdown</code>
+				</div>
+			</th:block>
+			<p th:if="${slug == null}">Badges need a public page. <a href="/app/settings">Choose its address in Settings.</a></p>
+		</div>
+	</main>
+	<footer th:replace="~{fragments :: footer}"></footer>
+</body>
+
+</html>

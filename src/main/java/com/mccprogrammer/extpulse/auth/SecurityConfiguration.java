@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,11 +27,23 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ContentSecurityPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
- * Stateless security: a client logs in once, gets a signed token (JWT) and sends it as
- * {@code Authorization: Bearer <token>} on every request. The app signs and checks its
- * own tokens, so there is no session and no external identity server.
+ * Two ways in, one per kind of client:
+ * <ul>
+ * <li><b>The API</b> ({@code /api/**}) is stateless: a client logs in once, gets a signed
+ * token (JWT) and sends it as {@code Authorization: Bearer <token>} on every request. The
+ * app signs and checks its own tokens, so there is no session and no external identity
+ * server.</li>
+ * <li><b>The website</b> (everything else) signs in with a form and keeps a session
+ * cookie, with CSRF protection on every form. The dashboard ({@code /app/**}) needs that
+ * sign-in; the home page, public pages and badges don't.</li>
+ * </ul>
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(AuthProperties.class)
@@ -44,27 +57,53 @@ class SecurityConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(SecurityConfiguration.class);
 
+	// Only this site's own files: no inline scripts or styles, no other origins, and no
+	// framing. Swagger UI is left out, since it builds its page with inline code.
+	private static final String CONTENT_SECURITY_POLICY = "default-src 'self'; img-src 'self' data:; "
+			+ "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.authorizeHttpRequests(
-				(requests) -> requests.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login")
-					.permitAll()
-					.requestMatchers("/actuator/health/**", "/actuator/info", "/error")
-					.permitAll()
-					// The API description and Swagger UI: public, like the API's own docs
-					// would be.
-					.requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
-					.permitAll()
-					.requestMatchers("/api/admin/**")
-					.hasAuthority("SCOPE_admin")
-					.anyRequest()
-					.authenticated())
+	@Order(1)
+	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+		http.securityMatcher("/api/**")
+			.authorizeHttpRequests(
+					(requests) -> requests.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login")
+						.permitAll()
+						.requestMatchers("/api/admin/**")
+						.hasAuthority("SCOPE_admin")
+						.anyRequest()
+						.authenticated())
 			.oauth2ResourceServer((resourceServer) -> resourceServer.jwt(Customizer.withDefaults()))
 			.sessionManagement((sessions) -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			// CSRF abuses credentials the browser sends by itself (cookies). The token
 			// travels in a header that only our client code sets, so there is nothing to
 			// abuse.
 			.csrf((csrf) -> csrf.disable());
+		return http.build();
+	}
+
+	@Bean
+	@Order(2)
+	SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
+		RequestMatcher swaggerUi = PathPatternRequestMatcher.withDefaults().matcher("/swagger-ui/**");
+		http.authorizeHttpRequests((requests) -> requests
+			.requestMatchers("/", "/login", "/register", "/p/**", "/css/**", "/favicon.svg", "/error")
+			.permitAll()
+			.requestMatchers("/actuator/health/**", "/actuator/info")
+			.permitAll()
+			// The API description and Swagger UI: public, like the API's own docs would
+			// be.
+			.requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
+			.permitAll()
+			.requestMatchers("/app/admin/**")
+			.hasRole("ADMIN")
+			.anyRequest()
+			.authenticated())
+			.formLogin((form) -> form.loginPage("/login").usernameParameter("email").defaultSuccessUrl("/app"))
+			.logout((logout) -> logout.logoutSuccessUrl("/login?signedOut"))
+			.headers((headers) -> headers
+				.addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(new NegatedRequestMatcher(swaggerUi),
+						new ContentSecurityPolicyHeaderWriter(CONTENT_SECURITY_POLICY))));
 		return http.build();
 	}
 

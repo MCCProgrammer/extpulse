@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head(${slug})}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('public')}"></header>
+	<main>
+		<div class="page-head">
+			<div>
+				<h1 th:text="${slug}">publisher</h1>
+				<p class="lede">Extensions and their installs across the VS Code Marketplace, Open VSX and the Chrome Web
+					Store, updated daily.</p>
+			</div>
+			<img th:src="@{/p/{slug}/badge.svg(slug=${slug})}" alt="Total installs" height="20">
+		</div>
+
+		<div class="tiles">
+			<div class="tile">
+				<div class="tile-label">Installs, all stores</div>
+				<div class="tile-value" th:text="${#numbers.formatInteger(installs, 1, 'COMMA')}">0</div>
+			</div>
+			<div class="tile">
+				<div class="tile-label">Extensions</div>
+				<div class="tile-value" th:text="${extensions.size()}">0</div>
+			</div>
+		</div>
+
+		<h2>Extensions</h2>
+		<p class="empty card" th:if="${extensions.isEmpty()}">No extensions yet.</p>
+		<div class="table-wrap" th:unless="${extensions.isEmpty()}">
+			<table>
+				<thead>
+					<tr>
+						<th scope="col">Extension</th>
+						<th scope="col">Stores</th>
+						<th scope="col" class="num">Installs</th>
+						<th scope="col" class="num">Last 7 days</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="extension : ${extensions}">
+						<td th:text="${extension.displayName()}">Name</td>
+						<td>
+							<div class="chips">
+								<a class="chip" th:each="listing : ${extension.listings()}" th:href="${listing.url()}"
+									th:text="${listing.store().displayName()}" rel="noopener">Store</a>
+							</div>
+						</td>
+						<td class="num" th:text="${#numbers.formatInteger(extension.installs(), 1, 'COMMA')}">0</td>
+						<td class="num" th:replace="~{stats/parts :: gain(${extension.weekGain()})}">+0</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</main>
+	<footer th:replace="~{fragments :: footer}"></footer>
+</body>
+
+</html>

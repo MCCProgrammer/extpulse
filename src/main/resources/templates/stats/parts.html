@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!-- Small pieces shared by the stats pages. -->
+
+<body>
+	<table>
+		<tr>
+			<!-- A gain: +12 in green, -3 in red, a dash while unknown (no snapshot from a week ago yet). -->
+			<td class="num" th:fragment="gain(value)"
+				th:classappend="${value == null} ? 'muted' : (${value > 0} ? 'gain-up' : (${value < 0} ? 'gain-down'))"
+				th:text="${value == null} ? '–' : ((${value > 0} ? '+' : '') + ${#numbers.formatInteger(value, 1, 'COMMA')})">
+				+0</td>
+		</tr>
+	</table>
+</body>
+
+</html>

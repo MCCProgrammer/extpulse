@@ -9,15 +9,17 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
  * Every API error is a Problem Details response (RFC 9457, application/problem+json).
- * Spring MVC builds them; this adds which fields failed validation and why.
+ * Spring MVC builds them; this adds which fields failed validation and why. Only for the
+ * API's controllers: the website's pages show errors as pages.
  */
-@RestControllerAdvice
+@RestControllerAdvice(annotations = RestController.class)
 class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@Override
