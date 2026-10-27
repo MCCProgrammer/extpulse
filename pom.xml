@@ -33,6 +33,13 @@
 		<springdoc.version>3.1.1</springdoc.version>
 		<jacoco.version>0.8.15</jacoco.version>
 		<greenmail.version>2.1.14</greenmail.version>
+		<spring-javaformat.version>0.0.48</spring-javaformat.version>
+		<sonar-maven-plugin.version>5.8.0.7211</sonar-maven-plugin.version>
+		<!-- SonarQube Cloud (sonarcloud.io): CI runs the analysis when SONAR_TOKEN is set. -->
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+		<sonar.organization>mccprogrammer</sonar.organization>
+		<sonar.projectKey>MCCProgrammer_extpulse</sonar.projectKey>
+		<sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 		<wiremock.version>3.13.2</wiremock.version>
 		<!-- Tests against the real stores run only in the weekly live-stores workflow. -->
 		<excludedGroups>live</excludedGroups>
@@ -173,6 +180,26 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<!-- Code formatting, the one Spring itself uses (tabs, 90 columns). The build
+				     fails on code that isn't formatted; ./mvnw spring-javaformat:apply fixes it. -->
+				<groupId>io.spring.javaformat</groupId>
+				<artifactId>spring-javaformat-maven-plugin</artifactId>
+				<version>${spring-javaformat.version}</version>
+				<executions>
+					<execution>
+						<phase>validate</phase>
+						<goals>
+							<goal>validate</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>${sonar-maven-plugin.version}</version>
 			</plugin>
 			<plugin>
 				<!-- Test coverage: records which lines the tests run, writes a report to

@@ -1,0 +1,4 @@
+# Commits that only reformat code. GitHub's blame skips them, and so does
+# git blame with: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# Format the code with Spring Java Format
+c4993abc1dd9df36ecfe6384aea34df2e7db6500

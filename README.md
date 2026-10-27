@@ -1,6 +1,7 @@
 # ExtPulse
 
 [![CI](https://github.com/MCCProgrammer/extpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/MCCProgrammer/extpulse/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/MCCProgrammer/extpulse/actions/workflows/codeql.yml/badge.svg)](https://github.com/MCCProgrammer/extpulse/actions/workflows/codeql.yml)
 
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
@@ -39,7 +40,8 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Tests | JUnit 6, Spring Boot Test, Testcontainers, WireMock; JaCoCo coverage gate in CI |
 | Container | Multi-stage Docker image (Temurin 25 JRE, layered, non-root, arm64), published to GitHub Container Registry |
 | Local services | Docker Compose |
-| CI | GitHub Actions |
+| CI | GitHub Actions: build and tests, coverage gate, Arm image, secret scan (gitleaks) |
+| Code quality | Spring Java Format (checked in the build), CodeQL, SonarQube Cloud, Dependabot |
 
 Why each choice was made: [docs/decisions](docs/decisions).
 
@@ -56,6 +58,9 @@ curl http://localhost:8080/actuator/health   # {"status":"UP"}
 
 # Run all tests (Testcontainers starts a throwaway PostgreSQL; WireMock stands in for the stores)
 ./mvnw verify
+
+# The build fails on code that isn't formatted; this formats it
+./mvnw spring-javaformat:apply
 
 # Only the tests against the real stores (left out of the normal build)
 ./mvnw test -Dgroups=live -DexcludedGroups=
