@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('Overview')}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('overview')}"></header>
+	<main>
+		<div class="page-head">
+			<div>
+				<h1>Overview</h1>
+				<p class="lede">Installs across every store, from today's collection.</p>
+			</div>
+		</div>
+		<div th:replace="~{fragments :: flash}"></div>
+
+		<div class="card empty" th:if="${extensions.isEmpty()}">
+			<p>You don't track any extension yet.</p>
+			<a class="button" href="/app/catalog">Add a publisher</a>
+		</div>
+
+		<th:block th:unless="${extensions.isEmpty()}">
+			<div class="tiles">
+				<div class="tile">
+					<div class="tile-label">Installs, all stores</div>
+					<div class="tile-value" th:text="${#numbers.formatInteger(installs, 1, 'COMMA')}">0</div>
+				</div>
+				<div class="tile">
+					<div class="tile-label">Gained in the last 7 days</div>
+					<div class="tile-value"
+						th:classappend="${weekGain != null and weekGain > 0} ? 'gain-up' : (${weekGain != null and weekGain < 0} ? 'gain-down')"
+						th:text="${weekGain == null} ? '–' : ((${weekGain > 0} ? '+' : '') + ${#numbers.formatInteger(weekGain, 1, 'COMMA')})">
+						+0</div>
+				</div>
+				<div class="tile">
+					<div class="tile-label">Extensions</div>
+					<div class="tile-value" th:text="${extensions.size()}">0</div>
+				</div>
+			</div>
+
+			<h2>Extensions</h2>
+			<div class="table-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th scope="col">Extension</th>
+							<th scope="col">Stores</th>
+							<th scope="col" class="num">Installs</th>
+							<th scope="col" class="num">Last 7 days</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:each="extension : ${extensions}">
+							<td>
+								<a th:href="@{/app/extensions/{id}(id=${extension.id()})}"
+									th:text="${extension.displayName()}">Name</a>
+								<div class="muted" th:text="${extension.publisher()}">publisher</div>
+							</td>
+							<td>
+								<div class="chips">
+									<span class="chip" th:each="listing : ${extension.listings()}"
+										th:text="${listing.store().displayName()}">Store</span>
+									<span class="muted" th:if="${extension.listings().isEmpty()}">No store yet</span>
+								</div>
+							</td>
+							<td class="num" th:text="${#numbers.formatInteger(extension.installs(), 1, 'COMMA')}">0</td>
+							<td th:replace="~{stats/parts :: gain(${extension.weekGain()})}">+0</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<p class="muted">A gain shows once there is a snapshot from a week ago.</p>
+		</th:block>
+	</main>
+	<footer th:replace="~{fragments :: footer}"></footer>
+</body>
+
+</html>

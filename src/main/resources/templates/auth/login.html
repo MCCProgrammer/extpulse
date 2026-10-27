@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('Sign in')}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('login')}"></header>
+	<main>
+		<div class="card" id="sign-in">
+			<h1>Sign in</h1>
+			<p class="lede">To your dashboard: stats, reviews and alerts.</p>
+			<div th:replace="~{fragments :: flash}"></div>
+			<p class="flash error" role="alert" th:if="${param.error}">Wrong email or password.</p>
+			<p class="flash notice" role="status" th:if="${param.signedOut}">You are signed out.</p>
+			<form class="stack" method="post" th:action="@{/login}">
+				<label>Email
+					<input type="email" name="email" autocomplete="username" required autofocus>
+				</label>
+				<label>Password
+					<input type="password" name="password" autocomplete="current-password" required>
+				</label>
+				<div class="actions">
+					<button type="submit">Sign in</button>
+				</div>
+			</form>
+			<p class="muted" th:if="${registrationOpen}">No account yet? <a href="/register">Create one</a>.</p>
+		</div>
+	</main>
+</body>
+
+</html>

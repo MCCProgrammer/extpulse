@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('Create an account')}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('register')}"></header>
+	<main>
+		<div class="card">
+			<h1>Create an account</h1>
+			<p class="lede" th:unless="${registrationOpen}">Registration is closed on this server.</p>
+			<p class="flash error" role="alert" th:if="${error}" th:text="${error}">Error</p>
+			<form class="stack" method="post" th:action="@{/register}" th:object="${form}">
+				<label>Email
+					<input type="email" th:field="*{email}" autocomplete="username" required>
+					<span class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">error</span>
+				</label>
+				<label>Password, 10 to 72 characters
+					<input type="password" th:field="*{password}" autocomplete="new-password" minlength="10" required>
+					<span class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">error</span>
+				</label>
+				<div class="actions">
+					<button type="submit">Create account</button>
+					<a class="button secondary" href="/login">Sign in instead</a>
+				</div>
+			</form>
+		</div>
+	</main>
+</body>
+
+</html>

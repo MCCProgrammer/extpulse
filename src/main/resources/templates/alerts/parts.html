@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!-- What an alert rule watches, in words. -->
+
+<body>
+	<th:block th:fragment="when(type, threshold)" th:switch="${type}">
+		<span th:case="'LOW_RATING'" th:text="'A review with ' + ${threshold} + ' ★ or less'">Low rating</span>
+		<span th:case="'INSTALL_SPIKE'" th:text="'At least ' + ${threshold} + ' installs in a day, twice the usual'">Spike</span>
+		<span th:case="'NEW_VERSION'">A new version</span>
+		<span th:case="'COLLECTION_FAILING'">No new numbers for 2 days</span>
+		<span th:case="*">Every Monday: the week's summary</span>
+	</th:block>
+</body>
+
+</html>

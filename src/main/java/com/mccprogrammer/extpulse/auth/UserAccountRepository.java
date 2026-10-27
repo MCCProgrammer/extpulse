@@ -12,4 +12,6 @@ interface UserAccountRepository extends JpaRepository<UserAccount, Long> {
 	@Query("select a from UserAccount a where lower(a.email) = lower(:email)")
 	Optional<UserAccount> findByEmail(String email);
 
+	Optional<UserAccount> findByPublicSlug(String publicSlug);
+
 }

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!-- Pieces every page uses: the head, the top bar and the messages after a change. -->
+
+<head th:fragment="head(title)">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title th:text="${title} + ' · ExtPulse'">ExtPulse</title>
+	<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+	<link rel="stylesheet" href="/css/app.css">
+</head>
+
+<body>
+
+	<header class="topbar" th:fragment="topbar(active)">
+		<div class="topbar-inner">
+			<a class="brand" th:href="${currentUser != null} ? '/app' : '/'">
+				<img src="/favicon.svg" alt=""> ExtPulse
+			</a>
+			<nav class="nav" aria-label="Main" th:if="${currentUser != null}">
+				<a href="/app" th:attr="aria-current=${active == 'overview'} ? 'page'">Overview</a>
+				<a href="/app/reviews" th:attr="aria-current=${active == 'reviews'} ? 'page'">Reviews</a>
+				<a href="/app/alerts" th:attr="aria-current=${active == 'alerts'} ? 'page'">Alerts</a>
+				<a href="/app/catalog" th:attr="aria-current=${active == 'catalog'} ? 'page'">Catalog</a>
+				<a href="/app/settings" th:attr="aria-current=${active == 'settings'} ? 'page'">Settings</a>
+				<a href="/app/admin" th:if="${currentUser.admin}"
+					th:attr="aria-current=${active == 'admin'} ? 'page'">Admin</a>
+				<form class="inline-form" method="post" th:action="@{/logout}">
+					<button class="link" type="submit">Sign out</button>
+				</form>
+			</nav>
+			<nav class="nav" aria-label="Main" th:unless="${currentUser != null}">
+				<a href="/swagger-ui.html">API</a>
+				<a href="https://github.com/MCCProgrammer/extpulse">Source</a>
+				<a href="/login">Sign in</a>
+			</nav>
+		</div>
+	</header>
+
+	<div th:fragment="flash">
+		<p class="flash notice" role="status" th:if="${notice}" th:text="${notice}">Saved.</p>
+		<p class="flash error" role="alert" th:if="${error}" th:text="${error}">Something went wrong.</p>
+	</div>
+
+	<footer class="footer" th:fragment="footer">
+		<p>
+			ExtPulse: daily stats, reviews and alerts for VS Code and Chrome extensions.
+			Numbers are collected once a day from the VS Code Marketplace, Open VSX and the Chrome Web Store.
+		</p>
+	</footer>
+
+</body>
+
+</html>

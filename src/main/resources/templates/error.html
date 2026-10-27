@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head(${status == 404} ? 'Not found' : 'Error')}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('error')}"></header>
+	<main>
+		<div class="card empty">
+			<h1 th:text="${status == 404} ? 'Nothing here' : (${status == 403} ? 'Not allowed' : 'Something went wrong')">Error</h1>
+			<p th:text="${status == 404} ? 'This page does not exist, or it is not public.' : ${status} + ' ' + ${error}">404</p>
+			<a class="button secondary" href="/">Home</a>
+		</div>
+	</main>
+</body>
+
+</html>

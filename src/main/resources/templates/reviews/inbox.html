@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('Reviews')}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('reviews')}"></header>
+	<main>
+		<h1>Reviews</h1>
+		<p class="lede">From the VS Code Marketplace and Open VSX, newest first.</p>
+		<div th:replace="~{fragments :: flash}"></div>
+
+		<form class="row card" method="get" action="/app/reviews" aria-label="Filters">
+			<label>Show
+				<select name="unread">
+					<option value="" th:selected="${unread == null}">All</option>
+					<option value="true" th:selected="${unread == true}">Unread</option>
+					<option value="false" th:selected="${unread == false}">Read</option>
+				</select>
+			</label>
+			<label>Rating
+				<select name="maxRating">
+					<option value="" th:selected="${maxRating == null}">Any</option>
+					<option th:each="stars : ${ {1, 2, 3, 4} }" th:value="${stars}" th:selected="${maxRating == stars}"
+						th:text="${stars} + ' ★ or less'">2 ★ or less</option>
+				</select>
+			</label>
+			<label>Store
+				<select name="store">
+					<option value="" th:selected="${store == null}">All</option>
+					<option th:each="option : ${stores}" th:value="${option.name()}" th:selected="${store == option}"
+						th:text="${option.displayName()}">store</option>
+				</select>
+			</label>
+			<button type="submit" class="secondary">Filter</button>
+		</form>
+
+		<p class="muted" th:text="${total} + (${total == 1} ? ' review' : ' reviews')">0 reviews</p>
+		<p class="card empty" th:if="${reviews.isEmpty()}">No reviews here.</p>
+
+		<article class="review" th:each="review : ${reviews}" th:classappend="${review.readAt() == null} ? 'unread'">
+			<div class="review-head">
+				<span class="stars" th:text="${review.rating()} + ' ★'"
+					th:attr="aria-label=${review.rating()} + ' out of 5 stars'">5 ★</span>
+				<strong th:text="${review.extensionName()}">Extension</strong>
+				<span class="chip" th:text="${review.store().displayName()}">Store</span>
+				<span class="muted" th:text="${review.author()} + ' · ' + ${#temporals.format(review.postedAt(), 'd MMM yyyy')}">author · date</span>
+			</div>
+			<p th:if="${review.text() != null and !review.text().isBlank()}" th:text="${review.text()}">text</p>
+			<p class="muted" th:if="${review.text() == null or review.text().isBlank()}">No text, only the rating.</p>
+			<p class="reply" th:if="${review.reply() != null}" th:text="'Your reply: ' + ${review.reply()}">reply</p>
+			<form class="inline-form" method="post" th:action="@{/app/reviews/{id}/read(id=${review.id()})}">
+				<input type="hidden" name="read" th:value="${review.readAt() == null}">
+				<input type="hidden" name="unread" th:if="${unread != null}" th:value="${unread}">
+				<input type="hidden" name="maxRating" th:if="${maxRating != null}" th:value="${maxRating}">
+				<input type="hidden" name="store" th:if="${store != null}" th:value="${store.name()}">
+				<input type="hidden" name="page" th:value="${page}">
+				<button class="link" type="submit" th:text="${review.readAt() == null} ? 'Mark as read' : 'Mark as unread'">Mark as read</button>
+			</form>
+		</article>
+
+		<nav class="pager" aria-label="Pages" th:if="${lastPage > 0}">
+			<a th:if="${page > 0}" th:href="@{/app/reviews(unread=${unread},maxRating=${maxRating},store=${store},page=${page - 1})}">← Newer</a>
+			<span class="muted" th:text="'Page ' + ${page + 1} + ' of ' + ${lastPage + 1}">Page 1 of 2</span>
+			<a th:if="${page < lastPage}" th:href="@{/app/reviews(unread=${unread},maxRating=${maxRating},store=${store},page=${page + 1})}">Older →</a>
+		</nav>
+	</main>
+	<footer th:replace="~{fragments :: footer}"></footer>
+</body>
+
+</html>

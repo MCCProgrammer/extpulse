@@ -162,6 +162,10 @@ public class CatalogService {
 		return this.publishers.findByUserIdOrderByName(userId);
 	}
 
+	List<Extension> extensionsOf(long userId) {
+		return this.extensions.findAllOwned(userId);
+	}
+
 	/**
 	 * The extension, if it belongs to the user. Another user's extension gets the same
 	 * 404 as a missing one, so IDs don't reveal what others track.

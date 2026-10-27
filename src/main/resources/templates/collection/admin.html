@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('Admin')}"></head>
+
+<body>
+	<header th:replace="~{fragments :: topbar('admin')}"></header>
+	<main>
+		<div class="page-head">
+			<div>
+				<h1>Collection</h1>
+				<p class="lede">Runs every day at 06:00 (Lisbon). Running it again the same day updates that day's numbers.</p>
+			</div>
+			<form method="post" th:action="@{/app/admin/collect}">
+				<button type="submit">Collect now</button>
+			</form>
+		</div>
+		<div th:replace="~{fragments :: flash}"></div>
+
+		<p class="card empty" th:if="${runs.isEmpty()}">No collection has run yet.</p>
+		<div class="table-wrap" th:unless="${runs.isEmpty()}">
+			<table>
+				<thead>
+					<tr>
+						<th scope="col">Started</th>
+						<th scope="col">Result</th>
+						<th scope="col" class="num">Collected</th>
+						<th scope="col" class="num">Failed</th>
+						<th scope="col" class="num">Took</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="run : ${runs}">
+						<td th:text="${#temporals.format(run.startedAt(), 'd MMM yyyy HH:mm')}">day</td>
+						<td th:text="${run.status()}">SUCCEEDED</td>
+						<td class="num" th:text="${run.succeeded()}">0</td>
+						<td class="num" th:text="${run.failed()}">0</td>
+						<td class="num" th:text="${run.seconds() == null} ? '–' : ${run.seconds()} + ' s'">1 s</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</main>
+	<footer th:replace="~{fragments :: footer}"></footer>
+</body>
+
+</html>

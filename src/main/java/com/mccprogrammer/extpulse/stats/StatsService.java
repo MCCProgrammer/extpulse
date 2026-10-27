@@ -24,7 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
-class StatsService {
+public class StatsService {
 
 	static final int DEFAULT_DAYS = 30;
 
@@ -46,7 +46,7 @@ class StatsService {
 	 * Every extension of the user, with today's installs and the gain over the last 7
 	 * days.
 	 */
-	List<ExtensionOverview> overview(long userId) {
+	public List<ExtensionOverview> overview(long userId) {
 		LocalDate today = LocalDate.now(this.clock);
 		Map<Long, List<ListingRow>> byExtension = new LinkedHashMap<>();
 		for (ListingRow row : this.queries.listingsOf(userId, today, today.minusDays(7))) {
@@ -150,14 +150,14 @@ class StatsService {
 	 * @param weekGain installs gained in the last 7 days, over the listings with a
 	 * snapshot from a week ago; {@code null} while there is no such snapshot
 	 */
-	record ExtensionOverview(long id, String displayName, String publisher, long installs, Long weekGain,
+	public record ExtensionOverview(long id, String displayName, String publisher, long installs, Long weekGain,
 			List<ListingOverview> listings) {
 	}
 
 	/**
 	 * @param lastCollectedOn the day of the snapshot these numbers come from
 	 */
-	record ListingOverview(long id, Store store, String externalId, String url, Long installs, Long weekGain,
+	public record ListingOverview(long id, Store store, String externalId, String url, Long installs, Long weekGain,
 			BigDecimal ratingAvg, Integer ratingCount, String version, LocalDate lastCollectedOn) {
 	}
 

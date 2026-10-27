@@ -28,6 +28,8 @@ services:
       EXTPULSE_AUTH_REGISTRATION_ALLOW_LIST: ${EXTPULSE_AUTH_REGISTRATION_ALLOW_LIST:-}
       # Behind Caddy: trust its X-Forwarded-* headers, so the app knows it is served over HTTPS.
       SERVER_FORWARD_HEADERS_STRATEGY: framework
+      # The dashboard's session cookie only travels over HTTPS.
+      SERVER_SERVLET_SESSION_COOKIE_SECURE: 'true'
     # Optional settings that only exist once chosen, such as the SMTP provider for alert
     # emails (SPRING_MAIL_HOST, _PORT, _USERNAME, _PASSWORD). Alerts by Discord work without it.
     env_file:

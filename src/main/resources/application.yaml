@@ -75,6 +75,16 @@ extpulse:
     connect-timeout: 5s
     read-timeout: 10s
 
+server:
+  servlet:
+    session:
+      # The website's sign-in. The cookie is never readable by scripts (HttpOnly, the
+      # default) and isn't sent with requests started by other sites (SameSite=Lax).
+      # Production also marks it Secure, so it only travels over HTTPS.
+      timeout: 8h
+      cookie:
+        same-site: lax
+
 management:
   health:
     mail:
