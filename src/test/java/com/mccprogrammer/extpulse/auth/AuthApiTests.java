@@ -148,7 +148,8 @@ class AuthApiTests {
 
 	@Test
 	void rejectsAnExpiredToken() throws Exception {
-		// Issued two hours ago with a one-hour validity: past the minute of allowed clock skew.
+		// Issued two hours ago with a one-hour validity: past the minute of allowed clock
+		// skew.
 		Clock twoHoursAgo = Clock.fixed(Instant.now().minus(Duration.ofHours(2)), ZoneOffset.UTC);
 
 		this.mvc.perform(get("/api/me").header("Authorization", "Bearer " + tokenFor(registeredAccount(), twoHoursAgo)))
@@ -157,12 +158,12 @@ class AuthApiTests {
 
 	@Test
 	void rejectsATokenSignedWithAnotherKey() throws Exception {
-		JwtEncoder otherKey = new NimbusJwtEncoder(new ImmutableSecret<>(
-				new SecretKeySpec("a different key, also 32+ bytes long".getBytes(StandardCharsets.UTF_8), "HmacSHA256")));
-		TokenService forger = new TokenService(otherKey, new AuthProperties("", Duration.ofHours(1)), Clock.systemUTC());
+		JwtEncoder otherKey = new NimbusJwtEncoder(new ImmutableSecret<>(new SecretKeySpec(
+				"a different key, also 32+ bytes long".getBytes(StandardCharsets.UTF_8), "HmacSHA256")));
+		TokenService forger = new TokenService(otherKey, new AuthProperties("", Duration.ofHours(1)),
+				Clock.systemUTC());
 
-		this.mvc.perform(get("/api/me").header("Authorization",
-				"Bearer " + forger.issue(registeredAccount()).value()))
+		this.mvc.perform(get("/api/me").header("Authorization", "Bearer " + forger.issue(registeredAccount()).value()))
 			.andExpect(status().isUnauthorized());
 	}
 
@@ -181,15 +182,13 @@ class AuthApiTests {
 	}
 
 	private ResultActions register(String email, String password) throws Exception {
-		return this.mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-			.content("""
-					{"email": "%s", "password": "%s"}""".formatted(email, password)));
+		return this.mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
+				{"email": "%s", "password": "%s"}""".formatted(email, password)));
 	}
 
 	private ResultActions login(String email, String password) throws Exception {
-		return this.mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-			.content("""
-					{"email": "%s", "password": "%s"}""".formatted(email, password)));
+		return this.mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+				{"email": "%s", "password": "%s"}""".formatted(email, password)));
 	}
 
 	private UserAccount registeredAccount() throws Exception {

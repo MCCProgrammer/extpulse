@@ -28,7 +28,10 @@ class StatsController {
 		this.stats = stats;
 	}
 
-	/** Your extensions with their installs today and the gain over the last 7 days, largest first. */
+	/**
+	 * Your extensions with their installs today and the gain over the last 7 days,
+	 * largest first.
+	 */
 	@GetMapping("/api/extensions")
 	List<ExtensionOverview> extensions(@AuthenticationPrincipal Jwt token) {
 		return this.stats.overview(AuthenticatedAccount.id(token));

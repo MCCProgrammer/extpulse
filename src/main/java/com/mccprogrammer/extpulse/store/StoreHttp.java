@@ -18,16 +18,16 @@ final class StoreHttp {
 	}
 
 	static RestClient client(URI baseUrl, StoreProperties properties) {
-		// Redirects are not followed here: the Chrome Web Store sends Location headers the
-		// JDK can't parse, so ChromeWebStoreSource follows them itself.
+		// Redirects are not followed here: the Chrome Web Store sends Location headers
+		// the JDK can't parse, so ChromeWebStoreSource follows them itself.
 		HttpClient httpClient = HttpClient.newBuilder().connectTimeout(properties.connectTimeout()).build();
 		JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
 		requestFactory.setReadTimeout(properties.readTimeout());
 		return RestClient.builder()
-				.baseUrl(baseUrl.toString())
-				.requestFactory(requestFactory)
-				.defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT)
-				.build();
+			.baseUrl(baseUrl.toString())
+			.requestFactory(requestFactory)
+			.defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT)
+			.build();
 	}
 
 }

@@ -16,8 +16,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 
 /**
- * One run of the collection: when it ran, how many listings it collected and which
- * ones failed.
+ * One run of the collection: when it ran, how many listings it collected and which ones
+ * failed.
  */
 @Entity
 @Table(name = "collection_runs")

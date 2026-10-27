@@ -41,8 +41,8 @@ class ChromeWebStoreSourceTests {
 
 	@Test
 	void anItemWithoutRatingsHasNoAverage() {
-		// The page of an unrated item has another item's rating further down, among
-		// the related items; it must not be taken for this one's.
+		// The page of an unrated item has another item's rating further down, among the
+		// related items; it must not be taken for this one's.
 		stubPage(UNIFIED_INBOX, "chrome-web-store/" + UNIFIED_INBOX + ".html");
 
 		assertThat(this.source.fetchStats(UNIFIED_INBOX)).isEqualTo(new ListingStats(37, null, 0, "1.0.2"));
@@ -62,8 +62,7 @@ class ChromeWebStoreSourceTests {
 			.willReturn(aResponse().withHeader("Content-Type", "text/html")
 				.withBody("<html><body><h1>Director's Cut for Letterboxd</h1><p>A new layout</p></body></html>")));
 
-		assertThatThrownBy(() -> this.source.fetchStats(DIRECTORS_CUT))
-			.isInstanceOf(StoreException.class)
+		assertThatThrownBy(() -> this.source.fetchStats(DIRECTORS_CUT)).isInstanceOf(StoreException.class)
 			.isNotInstanceOf(ListingNotFoundException.class)
 			.hasMessageContaining("has the page changed?");
 	}
@@ -86,8 +85,8 @@ class ChromeWebStoreSourceTests {
 
 	@Test
 	void stopsFollowingRedirectsAfterAFew() {
-		chromeWebStore.stubFor(get(urlPathEqualTo("/detail/" + DIRECTORS_CUT)).willReturn(aResponse().withStatus(301)
-			.withHeader("Location", "/detail/" + DIRECTORS_CUT + "?hl=en")));
+		chromeWebStore.stubFor(get(urlPathEqualTo("/detail/" + DIRECTORS_CUT))
+			.willReturn(aResponse().withStatus(301).withHeader("Location", "/detail/" + DIRECTORS_CUT + "?hl=en")));
 
 		assertThatThrownBy(() -> this.source.fetchStats(DIRECTORS_CUT)).isInstanceOf(StoreException.class)
 			.hasMessageContaining("redirected more than");
@@ -95,21 +94,22 @@ class ChromeWebStoreSourceTests {
 
 	@Test
 	void aLocationWithRawUtf8IsPercentEncoded() {
-		// What the JDK hands over for "director’s-cut": the three UTF-8 bytes of ’ read as ISO-8859-1.
+		// What the JDK hands over for "director’s-cut": the three UTF-8 bytes of ’ read
+		// as ISO-8859-1.
 		String asReceived = new String("/detail/director’s-cut-for-letter/x?hl=en".getBytes(StandardCharsets.UTF_8),
 				StandardCharsets.ISO_8859_1);
 
-		assertThat(ChromeWebStoreSource.redirectTarget(URI.create("https://chromewebstore.google.com/detail/x"),
-				asReceived))
-			.isEqualTo(URI.create("https://chromewebstore.google.com/detail/director%E2%80%99s-cut-for-letter/x?hl=en"));
+		assertThat(ChromeWebStoreSource
+			.redirectTarget(URI.create("https://chromewebstore.google.com/detail/x"), asReceived)).isEqualTo(
+					URI.create("https://chromewebstore.google.com/detail/director%E2%80%99s-cut-for-letter/x?hl=en"));
 	}
 
 	@Test
 	void aLocationAlreadyEncodedIsKeptAsItIs() {
 		String consent = "https://consent.google.com/m?continue=https://chromewebstore.google.com/detail/x?hl%3Den&gl=PT";
 
-		assertThat(ChromeWebStoreSource.redirectTarget(URI.create("https://chromewebstore.google.com/detail/x"),
-				consent))
+		assertThat(
+				ChromeWebStoreSource.redirectTarget(URI.create("https://chromewebstore.google.com/detail/x"), consent))
 			.isEqualTo(URI.create(consent));
 	}
 

@@ -62,43 +62,49 @@ class AlertDetector {
 				  AND r.posted_at >= l.created_at - interval '1 day'
 				ORDER BY r.id
 				""")
-				.param("since", utc(since))
-				.query(LowRating.class)
-				.list()
-				.stream()
-				.map((row) -> new Detection(row.ruleId(), "review:" + row.reviewId(), new AlertMessage(
-						"%s★ review of %s on %s".formatted(row.rating(), row.displayName(), row.store().displayName()),
-						"%s\n\n%s%s".formatted((row.text() != null) ? "\"" + row.text() + "\"" : "(no comment)",
-								"by " + row.author(),
-								(row.productVersion() != null) ? ", on version " + row.productVersion() : ""))))
-				.toList();
+			.param("since", utc(since))
+			.query(LowRating.class)
+			.list()
+			.stream()
+			.map((row) -> new Detection(row.ruleId(), "review:" + row.reviewId(), new AlertMessage(
+					"%s★ review of %s on %s".formatted(row.rating(), row.displayName(), row.store().displayName()),
+					"%s\n\n%s%s".formatted((row.text() != null) ? "\"" + row.text() + "\"" : "(no comment)",
+							"by " + row.author(),
+							(row.productVersion() != null) ? ", on version " + row.productVersion() : ""))))
+			.toList();
 	}
 
-	/** Listings whose latest snapshot, from today or yesterday, shows another version than the one before. */
+	/**
+	 * Listings whose latest snapshot, from today or yesterday, shows another version than
+	 * the one before.
+	 */
 	List<Detection> newVersions(LocalDate today) {
-		return this.jdbc.sql("""
-				SELECT ar.id AS rule_id, l.id AS listing_id, e.display_name, l.store, cur.version, prev.version AS previous
-				""" + RULE_LISTINGS + """
-				JOIN LATERAL (SELECT taken_on, version FROM snapshots s WHERE s.listing_id = l.id
-				              ORDER BY taken_on DESC LIMIT 1) cur ON true
-				JOIN LATERAL (SELECT version FROM snapshots s WHERE s.listing_id = l.id AND s.taken_on < cur.taken_on
-				              ORDER BY taken_on DESC LIMIT 1) prev ON true
-				WHERE ar.type = 'NEW_VERSION'
-				  AND cur.taken_on >= CAST(:today AS date) - 1
-				  AND cur.version IS NOT NULL
-				  AND cur.version IS DISTINCT FROM prev.version
-				ORDER BY l.id
-				""")
-				.param("today", today)
-				.query(NewVersion.class)
-				.list()
-				.stream()
-				.map((row) -> new Detection(row.ruleId(), "version:" + row.listingId() + ":" + row.version(),
-						new AlertMessage(
-								"%s %s is on %s".formatted(row.displayName(), row.version(), row.store().displayName()),
-								(row.previous() != null) ? "The version before was " + row.previous() + "."
-										: "The first version ExtPulse sees with a number.")))
-				.toList();
+		return this.jdbc
+			.sql("""
+					SELECT ar.id AS rule_id, l.id AS listing_id, e.display_name, l.store, cur.version, prev.version AS previous
+					"""
+					+ RULE_LISTINGS
+					+ """
+							JOIN LATERAL (SELECT taken_on, version FROM snapshots s WHERE s.listing_id = l.id
+							              ORDER BY taken_on DESC LIMIT 1) cur ON true
+							JOIN LATERAL (SELECT version FROM snapshots s WHERE s.listing_id = l.id AND s.taken_on < cur.taken_on
+							              ORDER BY taken_on DESC LIMIT 1) prev ON true
+							WHERE ar.type = 'NEW_VERSION'
+							  AND cur.taken_on >= CAST(:today AS date) - 1
+							  AND cur.version IS NOT NULL
+							  AND cur.version IS DISTINCT FROM prev.version
+							ORDER BY l.id
+							""")
+			.param("today", today)
+			.query(NewVersion.class)
+			.list()
+			.stream()
+			.map((row) -> new Detection(row.ruleId(), "version:" + row.listingId() + ":" + row.version(),
+					new AlertMessage(
+							"%s %s is on %s".formatted(row.displayName(), row.version(), row.store().displayName()),
+							(row.previous() != null) ? "The version before was " + row.previous() + "."
+									: "The first version ExtPulse sees with a number.")))
+			.toList();
 	}
 
 	/**
@@ -126,18 +132,17 @@ class AlertDetector {
 				      > 2 * (prev.installs - base.installs)::numeric / (prev.taken_on - base.taken_on)
 				ORDER BY l.id
 				""")
-				.param("today", today)
-				.query(Spike.class)
-				.list()
-				.stream()
-				.map((row) -> new Detection(row.ruleId(), "spike:" + row.listingId() + ":" + row.takenOn(),
-						new AlertMessage(
-								"%s: %s installs on %s on %s".formatted(row.displayName(), signed(row.gain()),
-										row.store().displayName(), row.takenOn().format(DAY_MONTH)),
-								"Usually about %s a day over the two weeks before."
-									.formatted(row.usual().setScale(1, RoundingMode.HALF_UP).stripTrailingZeros()
-										.toPlainString()))))
-				.toList();
+			.param("today", today)
+			.query(Spike.class)
+			.list()
+			.stream()
+			.map((row) -> new Detection(row.ruleId(), "spike:" + row.listingId() + ":" + row
+				.takenOn(), new AlertMessage(
+						"%s: %s installs on %s on %s".formatted(row.displayName(), signed(row.gain()),
+								row.store().displayName(), row.takenOn().format(DAY_MONTH)),
+						"Usually about %s a day over the two weeks before.".formatted(
+								row.usual().setScale(1, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()))))
+			.toList();
 	}
 
 	/**
@@ -158,20 +163,21 @@ class AlertDetector {
 				       OR (last.taken_on IS NULL AND l.created_at < CAST(:now AS timestamptz) - interval '2 days'))
 				ORDER BY l.id
 				""")
-				.param("today", today)
-				.param("now", utc(now))
-				.query(Failing.class)
-				.list()
-				.stream()
-				.map((row) -> new Detection(row.ruleId(),
-						"failing:" + row.listingId() + ":" + ((row.lastCollectedOn() != null) ? row.lastCollectedOn() : "never"),
-						new AlertMessage(
-								"No new numbers for %s on %s %s".formatted(row.displayName(), row.store().displayName(),
-										(row.lastCollectedOn() != null) ? "since " + row.lastCollectedOn()
-												: "since it was added"),
-								"Listing %s.%s".formatted(row.externalId(),
-										(row.lastError() != null) ? " Last error: " + row.lastError() : ""))))
-				.toList();
+			.param("today", today)
+			.param("now", utc(now))
+			.query(Failing.class)
+			.list()
+			.stream()
+			.map((row) -> new Detection(row.ruleId(),
+					"failing:" + row.listingId() + ":"
+							+ ((row.lastCollectedOn() != null) ? row.lastCollectedOn() : "never"),
+					new AlertMessage(
+							"No new numbers for %s on %s %s".formatted(row.displayName(), row.store().displayName(),
+									(row.lastCollectedOn() != null) ? "since " + row.lastCollectedOn()
+											: "since it was added"),
+							"Listing %s.%s".formatted(row.externalId(),
+									(row.lastError() != null) ? " Last error: " + row.lastError() : ""))))
+			.toList();
 	}
 
 	/**
@@ -194,12 +200,12 @@ class AlertDetector {
 				WHERE ar.type = 'WEEKLY_SUMMARY'
 				ORDER BY ar.id, e.id
 				""")
-				.param("sunday", sunday)
-				.param("weekBefore", monday.minusDays(1))
-				.param("from", monday.atStartOfDay(zone).toOffsetDateTime())
-				.param("to", monday.plusWeeks(1).atStartOfDay(zone).toOffsetDateTime())
-				.query(WeekRow.class)
-				.list();
+			.param("sunday", sunday)
+			.param("weekBefore", monday.minusDays(1))
+			.param("from", monday.atStartOfDay(zone).toOffsetDateTime())
+			.param("to", monday.plusWeeks(1).atStartOfDay(zone).toOffsetDateTime())
+			.query(WeekRow.class)
+			.list();
 		Map<Long, List<WeekRow>> byRule = rows.stream()
 			.collect(Collectors.groupingBy(WeekRow::ruleId, LinkedHashMap::new, Collectors.toList()));
 		List<Detection> summaries = new ArrayList<>();
@@ -221,7 +227,8 @@ class AlertDetector {
 			start += week.startOfKnownGains();
 		}
 		weeks.sort(Comparator.comparingLong(ExtensionWeek::gain).reversed());
-		String percent = (start > 0) ? " (%s%%)".formatted(signedDecimal(BigDecimal.valueOf(gain * 100.0 / start))) : "";
+		String percent = (start > 0) ? " (%s%%)".formatted(signedDecimal(BigDecimal.valueOf(gain * 100.0 / start)))
+				: "";
 		StringBuilder body = new StringBuilder();
 		for (ExtensionWeek week : weeks) {
 			body.append(week.line()).append('\n');
@@ -271,11 +278,14 @@ class AlertDetector {
 			LocalDate lastCollectedOn, String lastError) {
 	}
 
-	record WeekRow(long ruleId, long extensionId, String displayName, Store store, Long installsEnd,
-			Long installsStart, long newReviews, Integer lowestNewRating) {
+	record WeekRow(long ruleId, long extensionId, String displayName, Store store, Long installsEnd, Long installsStart,
+			long newReviews, Integer lowestNewRating) {
 	}
 
-	/** An extension's week, from its listings' rows. A listing without a start of week adds no gain. */
+	/**
+	 * An extension's week, from its listings' rows. A listing without a start of week
+	 * adds no gain.
+	 */
 	private record ExtensionWeek(String displayName, long installs, long gain, long startOfKnownGains,
 			List<String> byStore) {
 
@@ -284,7 +294,8 @@ class AlertDetector {
 			long gain = 0;
 			long start = 0;
 			List<String> byStore = new ArrayList<>();
-			// Store order (Marketplace first), as everywhere else; SQL sorts the names as text.
+			// Store order (Marketplace first), as everywhere else; SQL sorts the names as
+			// text.
 			List<WeekRow> sorted = listings.stream().sorted(Comparator.comparing(WeekRow::store)).toList();
 			for (WeekRow listing : sorted) {
 				installs += (listing.installsEnd() != null) ? listing.installsEnd() : 0;

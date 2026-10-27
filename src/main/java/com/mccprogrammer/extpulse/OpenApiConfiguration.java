@@ -10,9 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * The API description springdoc builds from the controllers, served at /v3/api-docs
- * and shown at /swagger-ui.html. "Authorize" there takes the token from
- * POST /api/auth/login.
+ * The API description springdoc builds from the controllers, served at /v3/api-docs and
+ * shown at /swagger-ui.html. "Authorize" there takes the token from POST /api/auth/login.
  */
 @Configuration(proxyBeanMethods = false)
 class OpenApiConfiguration {

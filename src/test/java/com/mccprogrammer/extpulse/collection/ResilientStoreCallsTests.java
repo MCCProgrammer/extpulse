@@ -18,7 +18,8 @@ class ResilientStoreCallsTests {
 
 	private static final StoreException STORE_DOWN = new StoreException(Store.OPEN_VSX, "503");
 
-	// Same shape as application.yaml (4 attempts, waits growing 4 times), in milliseconds.
+	// Same shape as application.yaml (4 attempts, waits growing 4 times), in
+	// milliseconds.
 	private final ResilientStoreCalls calls = new ResilientStoreCalls(
 			new CollectionProperties(4, Duration.ofMillis(20), Duration.ofMillis(1)));
 

@@ -1,7 +1,8 @@
 package com.mccprogrammer.extpulse.store;
 
 /**
- * The stores ExtPulse reads. The names match the values allowed in {@code listings.store}.
+ * The stores ExtPulse reads. The names match the values allowed in
+ * {@code listings.store}.
  */
 public enum Store {
 

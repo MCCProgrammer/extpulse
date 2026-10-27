@@ -1,8 +1,8 @@
 package com.mccprogrammer.extpulse.store;
 
 /**
- * A store couldn't be read: it didn't answer, answered with an error, or answered
- * with something ExtPulse doesn't understand (for example, a changed page).
+ * A store couldn't be read: it didn't answer, answered with an error, or answered with
+ * something ExtPulse doesn't understand (for example, a changed page).
  */
 public class StoreException extends RuntimeException {
 

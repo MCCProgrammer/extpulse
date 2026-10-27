@@ -33,8 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The catalog API with the real store adapters, pointed at WireMock serving the
- * responses recorded from the stores.
+ * The catalog API with the real store adapters, pointed at WireMock serving the responses
+ * recorded from the stores.
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
@@ -174,10 +174,11 @@ class CatalogApiTests {
 	private long addExtensionNamed(String displayName) throws Exception {
 		addPublisher(this.token, "MCCProgrammer");
 		long publisher = this.jdbc.sql("SELECT id FROM publishers").query(Long.class).single();
-		String body = this.mvc.perform(post("/api/extensions").header("Authorization", "Bearer " + this.token)
-			.contentType(MediaType.APPLICATION_JSON)
-			.content("""
-					{"publisherId": %d, "displayName": "%s"}""".formatted(publisher, displayName)))
+		String body = this.mvc
+			.perform(post("/api/extensions").header("Authorization", "Bearer " + this.token)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"publisherId": %d, "displayName": "%s"}""".formatted(publisher, displayName)))
 			.andExpect(status().isCreated())
 			.andReturn()
 			.getResponse()
@@ -192,10 +193,10 @@ class CatalogApiTests {
 	}
 
 	private ResultActions addListing(String token, long extension, String store, String externalId) throws Exception {
-		return this.mvc.perform(post("/api/extensions/" + extension + "/listings")
-			.header("Authorization", "Bearer " + token)
-			.contentType(MediaType.APPLICATION_JSON)
-			.content("{\"store\": \"%s\", \"externalId\": \"%s\"}".formatted(store, externalId)));
+		return this.mvc
+			.perform(post("/api/extensions/" + extension + "/listings").header("Authorization", "Bearer " + token)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"store\": \"%s\", \"externalId\": \"%s\"}".formatted(store, externalId)));
 	}
 
 	private void stubMarketplacePublisher(String publisher, String bodyFile) {
@@ -206,8 +207,10 @@ class CatalogApiTests {
 	}
 
 	private void stubJson(String path, int status, String bodyFile) {
-		stores.stubFor(WireMock.get(path).willReturn(
-				aResponse().withStatus(status).withHeader("Content-Type", "application/json").withBodyFile(bodyFile)));
+		stores.stubFor(WireMock.get(path)
+			.willReturn(aResponse().withStatus(status)
+				.withHeader("Content-Type", "application/json")
+				.withBodyFile(bodyFile)));
 	}
 
 	private void stubChromePage(String itemId, String bodyFile) {

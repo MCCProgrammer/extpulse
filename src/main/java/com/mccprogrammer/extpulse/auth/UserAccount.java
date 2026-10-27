@@ -12,8 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * A person who can log in. Named UserAccount so it doesn't clash with Spring
- * Security's own {@code User}.
+ * A person who can log in. Named UserAccount so it doesn't clash with Spring Security's
+ * own {@code User}.
  */
 @Entity
 @Table(name = "users")

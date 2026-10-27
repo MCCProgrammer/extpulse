@@ -5,7 +5,8 @@ import java.util.Locale;
 /**
  * An extension found on a store when looking up a publisher.
  *
- * @param externalId the ID the store uses for it, the one {@link StoreSource#fetchStats} takes
+ * @param externalId the ID the store uses for it, the one {@link StoreSource#fetchStats}
+ * takes
  * @param extensionKey the same for every store that has this extension: the VS Code
  * extension ID in lowercase ({@code mccprogrammer.diff-checker}), whether the store
  * writes it {@code MCCProgrammer.diff-checker} or {@code MCCProgrammer/diff-checker}

@@ -85,7 +85,8 @@ public class CollectionService {
 				run.succeeded();
 			}
 			catch (RuntimeException ex) {
-				// One listing failing (a store down, a page that changed) never stops the others.
+				// One listing failing (a store down, a page that changed) never stops the
+				// others.
 				logger.warn("Collection run {}: {} of {} {} failed: {}", run.getId(), step, listing.getStore(),
 						listing.getExternalId(), ex.getMessage());
 				run.failed(new CollectionError(listing.getId(), listing.getStore(), listing.getExternalId(),
@@ -96,8 +97,8 @@ public class CollectionService {
 		CollectionRun finished = this.runs.save(run);
 		logger.info("Collection run {} {}: {} collected, {} failed", finished.getId(), finished.getStatus(),
 				finished.getListingsSucceeded(), finished.getListingsFailed());
-		this.events.publishEvent(
-				new CollectionFinished(finished.getId(), finished.getStatus(), finished.getFinishedAt()));
+		this.events
+			.publishEvent(new CollectionFinished(finished.getId(), finished.getStatus(), finished.getFinishedAt()));
 		return finished;
 	}
 

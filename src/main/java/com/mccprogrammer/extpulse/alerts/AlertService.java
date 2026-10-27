@@ -31,8 +31,8 @@ class AlertService {
 
 	private static final Logger logger = LoggerFactory.getLogger(AlertService.class);
 
-	// Looking back further than one collection makes up for a check that didn't run;
-	// the outbox ignores what was already found.
+	// Looking back further than one collection makes up for a check that didn't run; the
+	// outbox ignores what was already found.
 	private static final Duration REVIEW_WINDOW = Duration.ofDays(2);
 
 	private final AlertRuleRepository rules;
@@ -98,7 +98,8 @@ class AlertService {
 	void deliverPending() {
 		for (Pending alert : this.outbox.pending(this.properties.maxAttempts())) {
 			try {
-				this.senders.get(alert.channel()).send(alert.target(), new AlertMessage(alert.title(), alert.message()));
+				this.senders.get(alert.channel())
+					.send(alert.target(), new AlertMessage(alert.title(), alert.message()));
 				this.outbox.sent(alert.id(), this.clock.instant());
 			}
 			catch (RuntimeException ex) {
@@ -115,7 +116,8 @@ class AlertService {
 	AlertRule addRule(long userId, AlertType type, AlertChannel channel, String target, Integer threshold) {
 		String resolvedTarget = target(userId, channel, target);
 		try {
-			return this.rules.saveAndFlush(new AlertRule(userId, type, threshold(type, threshold), channel, resolvedTarget));
+			return this.rules
+				.saveAndFlush(new AlertRule(userId, type, threshold(type, threshold), channel, resolvedTarget));
 		}
 		catch (DataIntegrityViolationException ex) {
 			throw ApiProblem.of(HttpStatus.CONFLICT, "You already have this alert", ex);
@@ -126,12 +128,16 @@ class AlertService {
 		this.rules.delete(owned(userId, ruleId));
 	}
 
-	/** Sends a test message through the rule's channel now, so a wrong address shows at once. */
+	/**
+	 * Sends a test message through the rule's channel now, so a wrong address shows at
+	 * once.
+	 */
 	void sendTest(long userId, long ruleId) {
 		AlertRule rule = owned(userId, ruleId);
 		try {
-			this.senders.get(rule.getChannel()).send(rule.getTarget(), new AlertMessage("ExtPulse test alert",
-					"This is where your " + rule.getType() + " alerts will arrive."));
+			this.senders.get(rule.getChannel())
+				.send(rule.getTarget(), new AlertMessage("ExtPulse test alert",
+						"This is where your " + rule.getType() + " alerts will arrive."));
 		}
 		catch (RuntimeException ex) {
 			throw ApiProblem.of(HttpStatus.BAD_GATEWAY, "The test alert could not be sent: " + ex.getMessage(), ex);
@@ -148,7 +154,9 @@ class AlertService {
 			case EMAIL -> {
 				if (target == null || target.isBlank()) {
 					// The account's own email.
-					yield this.jdbc.sql("SELECT email FROM users WHERE id = :id").param("id", userId).query(String.class)
+					yield this.jdbc.sql("SELECT email FROM users WHERE id = :id")
+						.param("id", userId)
+						.query(String.class)
 						.single();
 				}
 				if (!target.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+") || target.length() > 254) {

@@ -11,9 +11,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Calls the real stores, with the URLs and timeouts from application.yaml. Left out
- * of the normal build (the "live" tag); the live-stores workflow runs it weekly, so a
- * change on the stores' side fails loudly instead of leaving gaps in the data.
+ * Calls the real stores, with the URLs and timeouts from application.yaml. Left out of
+ * the normal build (the "live" tag); the live-stores workflow runs it weekly, so a change
+ * on the stores' side fails loudly instead of leaving gaps in the data.
  */
 @Tag("live")
 @SpringBootTest(classes = { StoreConfiguration.class, MarketplaceSource.class, OpenVsxSource.class,

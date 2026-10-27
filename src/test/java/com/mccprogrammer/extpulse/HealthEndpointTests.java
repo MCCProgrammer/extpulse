@@ -12,8 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The health endpoint is UP only when the application can reach PostgreSQL,
- * so this test checks the whole setup: Spring context, Flyway and the database.
+ * The health endpoint is UP only when the application can reach PostgreSQL, so this test
+ * checks the whole setup: Spring context, Flyway and the database.
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
@@ -25,9 +25,7 @@ class HealthEndpointTests {
 
 	@Test
 	void healthIsUpWhenTheDatabaseIsReachable() throws Exception {
-		mockMvc.perform(get("/actuator/health"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.status").value("UP"));
+		mockMvc.perform(get("/actuator/health")).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("UP"));
 	}
 
 }

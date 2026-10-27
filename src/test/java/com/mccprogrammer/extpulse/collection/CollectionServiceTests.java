@@ -27,8 +27,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The collection against a real PostgreSQL, with fake stores. No test transaction:
- * the collection commits as it goes, and that is part of what is tested.
+ * The collection against a real PostgreSQL, with fake stores. No test transaction: the
+ * collection commits as it goes, and that is part of what is tested.
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest(properties = "extpulse.collection.cron=-")
@@ -66,7 +66,8 @@ class CollectionServiceTests {
 		this.jdbc.sql("DELETE FROM collection_runs").update();
 		this.jdbc.sql("DELETE FROM users").update();
 		long user = id("INSERT INTO users (email, password_hash) VALUES ('miguel@example.com', 'x') RETURNING id");
-		long publisher = id("INSERT INTO publishers (user_id, name) VALUES (" + user + ", 'MCCProgrammer') RETURNING id");
+		long publisher = id(
+				"INSERT INTO publishers (user_id, name) VALUES (" + user + ", 'MCCProgrammer') RETURNING id");
 		long extension = id("INSERT INTO extensions (publisher_id, display_name) VALUES (" + publisher
 				+ ", 'Diff Checker') RETURNING id");
 		this.marketplaceListing = id("INSERT INTO listings (extension_id, store, external_id) VALUES (" + extension
@@ -86,9 +87,8 @@ class CollectionServiceTests {
 		assertThat(run.getListingsSucceeded()).isEqualTo(2);
 		assertThat(run.getStartedAt()).isEqualTo(MORNING);
 		assertThat(run.getFinishedAt()).isEqualTo(MORNING);
-		assertThat(snapshotsOf(this.marketplaceListing)).containsExactly(
-				Map.of("taken_on", "2026-10-26", "installs", 1764L, "rating_avg", "1.00", "rating_count", 1,
-						"version", "0.3.0"));
+		assertThat(snapshotsOf(this.marketplaceListing)).containsExactly(Map.of("taken_on", "2026-10-26", "installs",
+				1764L, "rating_avg", "1.00", "rating_count", 1, "version", "0.3.0"));
 		assertThat(snapshotsOf(this.openVsxListing)).singleElement()
 			.satisfies(row -> assertThat(row).containsEntry("installs", 1450L).containsEntry("rating_avg", "none"));
 	}
@@ -123,7 +123,8 @@ class CollectionServiceTests {
 		this.marketplace.answers(new ListingStats(1764, null, 0, "0.3.0"));
 		this.openVsx.answers(new ListingStats(1450, null, 0, "0.3.0"));
 
-		// 23:30 UTC on 15 July is already 00:30 on 16 July in Lisbon (summer time, UTC+1).
+		// 23:30 UTC on 15 July is already 00:30 on 16 July in Lisbon (summer time,
+		// UTC+1).
 		collectAt(Instant.parse("2026-07-15T23:30:00Z"));
 
 		assertThat(snapshotsOf(this.marketplaceListing)).extracting(row -> row.get("taken_on"))
@@ -141,11 +142,13 @@ class CollectionServiceTests {
 		assertThat(run.getListingsFailed()).isEqualTo(1);
 		assertThat(snapshotsOf(this.openVsxListing)).hasSize(1);
 		assertThat(snapshotsOf(this.marketplaceListing)).isEmpty();
-		assertThat(this.jdbc.sql("SELECT listing_id, store, external_id, message FROM collection_run_errors WHERE run_id = :run")
+		assertThat(this.jdbc
+			.sql("SELECT listing_id, store, external_id, message FROM collection_run_errors WHERE run_id = :run")
 			.param("run", run.getId())
 			.query()
-			.listOfRows()).containsExactly(Map.of("listing_id", this.marketplaceListing, "store", "VS_MARKETPLACE",
-					"external_id", "MCCProgrammer.diff-checker", "message", "stats: VS_MARKETPLACE: query failed"));
+			.listOfRows())
+			.containsExactly(Map.of("listing_id", this.marketplaceListing, "store", "VS_MARKETPLACE", "external_id",
+					"MCCProgrammer.diff-checker", "message", "stats: VS_MARKETPLACE: query failed"));
 	}
 
 	@Test

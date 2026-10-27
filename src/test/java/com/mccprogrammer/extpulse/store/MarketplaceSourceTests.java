@@ -127,9 +127,9 @@ class MarketplaceSourceTests {
 
 	@Test
 	void aSlowAnswerTimesOut() {
-		marketplace.stubFor(post(QUERY).willReturn(aResponse()
-			.withFixedDelay((int) StoreTestSupport.READ_TIMEOUT.toMillis() * 4)
-			.withBodyFile("marketplace/diff-checker.json")));
+		marketplace.stubFor(
+				post(QUERY).willReturn(aResponse().withFixedDelay((int) StoreTestSupport.READ_TIMEOUT.toMillis() * 4)
+					.withBodyFile("marketplace/diff-checker.json")));
 
 		assertThatThrownBy(() -> this.source.fetchStats("MCCProgrammer.diff-checker"))
 			.isInstanceOf(StoreException.class);
@@ -163,7 +163,8 @@ class MarketplaceSourceTests {
 			.singleElement()
 			.satisfies((review) -> assertThat(review.rating()).isEqualTo(5));
 		// filterOptions=1 would leave ratings without text out.
-		marketplace.verify(getRequestedFor(urlPathEqualTo("/_apis/public/gallery/publishers/esbenp/extensions/prettier-vscode/reviews"))
+		marketplace.verify(getRequestedFor(
+				urlPathEqualTo("/_apis/public/gallery/publishers/esbenp/extensions/prettier-vscode/reviews"))
 			.withQueryParam("filterOptions", absent())
 			.withHeader("Accept", equalTo("application/json;api-version=7.2-preview.1")));
 	}
@@ -195,17 +196,18 @@ class MarketplaceSourceTests {
 
 	private void stubReviews(String publisher, String name,
 			com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder response) {
-		marketplace.stubFor(get(urlPathEqualTo("/_apis/public/gallery/publishers/" + publisher + "/extensions/" + name
-				+ "/reviews"))
+		marketplace.stubFor(get(
+				urlPathEqualTo("/_apis/public/gallery/publishers/" + publisher + "/extensions/" + name + "/reviews"))
 			.willReturn(response.withHeader("Content-Type", "application/json; charset=utf-8")));
 	}
 
 	private void stubQuery(int filterType, String value, String bodyFile) {
 		marketplace.stubFor(post(QUERY)
-			.withRequestBody(matchingJsonPath("$.filters[0].criteria[0].filterType", equalTo(String.valueOf(filterType))))
+			.withRequestBody(
+					matchingJsonPath("$.filters[0].criteria[0].filterType", equalTo(String.valueOf(filterType))))
 			.withRequestBody(matchingJsonPath("$.filters[0].criteria[0].value", equalTo(value)))
-			.willReturn(aResponse().withHeader("Content-Type", "application/json; charset=utf-8")
-				.withBodyFile(bodyFile)));
+			.willReturn(
+					aResponse().withHeader("Content-Type", "application/json; charset=utf-8").withBodyFile(bodyFile)));
 	}
 
 }

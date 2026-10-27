@@ -65,7 +65,8 @@ class StatsApiTests {
 		snapshots(markify, 7, 100, 0, 130);
 		extension(publisher, "No listings yet");
 
-		// Fixed dates for weeks: 2026-10-05 and 2026-10-12 are Mondays. +2 installs a day from 100 on 10-04.
+		// Fixed dates for weeks: 2026-10-05 and 2026-10-12 are Mondays. +2 installs a day
+		// from 100 on 10-04.
 		this.weekly = extension(publisher, "Weekly");
 		long weeklyListing = listing(this.weekly, "OPEN_VSX", "MCCProgrammer/weekly");
 		this.jdbc.sql("""
@@ -79,8 +80,8 @@ class StatsApiTests {
 	@Test
 	void listsTheExtensionsWithInstallsAndTheWeeksGainLargestFirst() throws Exception {
 		request("/api/extensions").andExpect(status().isOk())
-			.andExpect(jsonPath("$[*].displayName").value(
-					contains("Debug Data Structures Visualizer", "Markify", "Weekly", "No listings yet")))
+			.andExpect(jsonPath("$[*].displayName")
+				.value(contains("Debug Data Structures Visualizer", "Markify", "Weekly", "No listings yet")))
 			// 1080 + 520; the gain counts only the Marketplace, the one listing with a
 			// snapshot from a week ago: 1080 - 1020.
 			.andExpect(jsonPath("$[0].installs").value(1600))
@@ -134,15 +135,17 @@ class StatsApiTests {
 			.andExpect(status().isBadRequest());
 		request("/api/extensions/%d/stats?from=2024-01-01&to=2026-01-01".formatted(this.visualizer))
 			.andExpect(status().isBadRequest());
-		request("/api/extensions/%d/stats?granularity=month".formatted(this.visualizer)).andExpect(status().isBadRequest());
+		request("/api/extensions/%d/stats?granularity=month".formatted(this.visualizer))
+			.andExpect(status().isBadRequest());
 	}
 
 	@Test
 	void anotherAccountsStatsLookMissing() throws Exception {
 		String other = TestAccounts.tokenFor(this.mvc, "someone@example.com");
 
-		this.mvc.perform(get("/api/extensions/%d/stats".formatted(this.visualizer))
-			.header("Authorization", "Bearer " + other)).andExpect(status().isNotFound());
+		this.mvc.perform(
+				get("/api/extensions/%d/stats".formatted(this.visualizer)).header("Authorization", "Bearer " + other))
+			.andExpect(status().isNotFound());
 		this.mvc.perform(get("/api/extensions").header("Authorization", "Bearer " + other))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$").value(empty()));

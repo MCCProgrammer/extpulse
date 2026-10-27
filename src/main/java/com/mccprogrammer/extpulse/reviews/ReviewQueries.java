@@ -43,19 +43,22 @@ class ReviewQueries {
 				ORDER BY r.posted_at DESC, r.id DESC
 				LIMIT :limit OFFSET :offset
 				""")
-				.param("user", userId)
-				.param("unread", filter.unread(), Types.BOOLEAN)
-				.param("unanswered", filter.unanswered(), Types.BOOLEAN)
-				.param("maxRating", filter.maxRating(), Types.INTEGER)
-				.param("store", (filter.store() != null) ? filter.store().name() : null, Types.VARCHAR)
-				.param("extension", filter.extensionId(), Types.BIGINT)
-				.param("limit", limit)
-				.param("offset", offset)
-				.query(ReviewRow.class)
-				.list();
+			.param("user", userId)
+			.param("unread", filter.unread(), Types.BOOLEAN)
+			.param("unanswered", filter.unanswered(), Types.BOOLEAN)
+			.param("maxRating", filter.maxRating(), Types.INTEGER)
+			.param("store", (filter.store() != null) ? filter.store().name() : null, Types.VARCHAR)
+			.param("extension", filter.extensionId(), Types.BIGINT)
+			.param("limit", limit)
+			.param("offset", offset)
+			.query(ReviewRow.class)
+			.list();
 	}
 
-	/** Marks a review of the user's as read or unread; false if the user has no such review. */
+	/**
+	 * Marks a review of the user's as read or unread; false if the user has no such
+	 * review.
+	 */
 	boolean markRead(long userId, long reviewId, boolean read, Instant now) {
 		return this.jdbc.sql("""
 				UPDATE reviews SET read_at = CASE WHEN :read THEN coalesce(read_at, :now) END
@@ -66,11 +69,11 @@ class ReviewQueries {
 				      JOIN publishers p ON p.id = e.publisher_id
 				      WHERE p.user_id = :user)
 				""")
-				.param("read", read)
-				.param("now", OffsetDateTime.ofInstant(now, ZoneOffset.UTC))
-				.param("review", reviewId)
-				.param("user", userId)
-				.update() == 1;
+			.param("read", read)
+			.param("now", OffsetDateTime.ofInstant(now, ZoneOffset.UTC))
+			.param("review", reviewId)
+			.param("user", userId)
+			.update() == 1;
 	}
 
 	record Filter(Boolean unread, Boolean unanswered, Integer maxRating, Store store, Long extensionId) {

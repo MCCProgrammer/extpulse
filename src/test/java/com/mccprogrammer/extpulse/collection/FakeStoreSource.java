@@ -13,8 +13,8 @@ import com.mccprogrammer.extpulse.store.StoreReview;
 import com.mccprogrammer.extpulse.store.StoreSource;
 
 /**
- * A store that answers what the test tells it to, and remembers when it was asked.
- * Queued answers are used first, in order; after that, {@code always}.
+ * A store that answers what the test tells it to, and remembers when it was asked. Queued
+ * answers are used first, in order; after that, {@code always}.
  */
 class FakeStoreSource implements StoreSource {
 

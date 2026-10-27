@@ -15,9 +15,9 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 /**
- * The VS Code Marketplace, through its {@code extensionquery} API. The API is public
- * but not officially documented, so the version it answers with is pinned.
- * External IDs look like {@code MCCProgrammer.diff-checker}.
+ * The VS Code Marketplace, through its {@code extensionquery} API. The API is public but
+ * not officially documented, so the version it answers with is pinned. External IDs look
+ * like {@code MCCProgrammer.diff-checker}.
  */
 @Component
 class MarketplaceSource implements StoreSource {
@@ -41,7 +41,8 @@ class MarketplaceSource implements StoreSource {
 	// Enough for any publisher we know of; paging comes when one has more.
 	private static final int PUBLISHER_PAGE_SIZE = 100;
 
-	// The newest reviews first. The default filter: 1 would leave out ratings without text.
+	// The newest reviews first. The default filter: 1 would leave out ratings without
+	// text.
 	private static final int REVIEWS_PAGE_SIZE = 100;
 
 	private final RestClient http;
@@ -60,22 +61,20 @@ class MarketplaceSource implements StoreSource {
 
 	@Override
 	public List<DiscoveredListing> discover(String publisher) {
-		return query(BY_PUBLISHER_NAME, publisher, PUBLISHER_PAGE_SIZE).stream()
-				.map(extension -> {
-					String publisherName = extension.publisher().publisherName();
-					String externalId = publisherName + "." + extension.extensionName();
-					return new DiscoveredListing(store(), externalId,
-							DiscoveredListing.vsCodeExtensionKey(publisherName, extension.extensionName()),
-							extension.displayName(), this.baseUrl + "/items?itemName=" + externalId);
-				})
-				.toList();
+		return query(BY_PUBLISHER_NAME, publisher, PUBLISHER_PAGE_SIZE).stream().map(extension -> {
+			String publisherName = extension.publisher().publisherName();
+			String externalId = publisherName + "." + extension.extensionName();
+			return new DiscoveredListing(store(), externalId,
+					DiscoveredListing.vsCodeExtensionKey(publisherName, extension.extensionName()),
+					extension.displayName(), this.baseUrl + "/items?itemName=" + externalId);
+		}).toList();
 	}
 
 	@Override
 	public ListingStats fetchStats(String externalId) {
 		Extension extension = query(BY_EXTENSION_NAME, externalId, 1).stream()
-				.findFirst()
-				.orElseThrow(() -> new ListingNotFoundException(store(), externalId));
+			.findFirst()
+			.orElseThrow(() -> new ListingNotFoundException(store(), externalId));
 		// A statistic is missing, not zero, while nobody has rated or installed yet.
 		BigDecimal ratingAvg = extension.statistic("averagerating") != null
 				? BigDecimal.valueOf(extension.statistic("averagerating")) : null;
@@ -92,11 +91,11 @@ class MarketplaceSource implements StoreSource {
 		Reviews reviews;
 		try {
 			reviews = this.http.get()
-					.uri("/_apis/public/gallery/publishers/{publisher}/extensions/{name}/reviews?count={count}",
-							externalId.substring(0, dot), externalId.substring(dot + 1), REVIEWS_PAGE_SIZE)
-					.header(HttpHeaders.ACCEPT, API_VERSION)
-					.retrieve()
-					.body(Reviews.class);
+				.uri("/_apis/public/gallery/publishers/{publisher}/extensions/{name}/reviews?count={count}",
+						externalId.substring(0, dot), externalId.substring(dot + 1), REVIEWS_PAGE_SIZE)
+				.header(HttpHeaders.ACCEPT, API_VERSION)
+				.retrieve()
+				.body(Reviews.class);
 		}
 		catch (HttpClientErrorException.NotFound ex) {
 			throw new ListingNotFoundException(store(), externalId);
@@ -108,12 +107,12 @@ class MarketplaceSource implements StoreSource {
 			return List.of();
 		}
 		return reviews.reviews()
-				.stream()
-				.filter((review) -> !review.isDeleted() && !review.isIgnored())
-				.map((review) -> new StoreReview(String.valueOf(review.id()), review.rating(), blankToNull(review.text()),
-						review.userDisplayName(), review.productVersion(), review.updatedDate(),
-						(review.reply() != null && !review.reply().isDeleted()) ? review.reply().replyText() : null))
-				.toList();
+			.stream()
+			.filter((review) -> !review.isDeleted() && !review.isIgnored())
+			.map((review) -> new StoreReview(String.valueOf(review.id()), review.rating(), blankToNull(review.text()),
+					review.userDisplayName(), review.productVersion(), review.updatedDate(),
+					(review.reply() != null && !review.reply().isDeleted()) ? review.reply().replyText() : null))
+			.toList();
 	}
 
 	private static String blankToNull(String text) {
@@ -128,9 +127,9 @@ class MarketplaceSource implements StoreSource {
 			response = send(request);
 		}
 		catch (ResourceAccessException ex) {
-			// The query only reads, but it is a POST. When a kept-alive connection turns out
-			// to be closed, the JDK client sends a GET again by itself, never a POST; so a
-			// read that failed on the connection gets one more try here.
+			// The query only reads, but it is a POST. When a kept-alive connection turns
+			// out to be closed, the JDK client sends a GET again by itself, never a POST;
+			// so a read that failed on the connection gets one more try here.
 			try {
 				response = send(request);
 			}
@@ -151,12 +150,12 @@ class MarketplaceSource implements StoreSource {
 
 	private QueryResponse send(QueryRequest request) {
 		return this.http.post()
-				.uri("/_apis/public/gallery/extensionquery")
-				.header(HttpHeaders.ACCEPT, API_VERSION)
-				.contentType(MediaType.APPLICATION_JSON)
-				.body(request)
-				.retrieve()
-				.body(QueryResponse.class);
+			.uri("/_apis/public/gallery/extensionquery")
+			.header(HttpHeaders.ACCEPT, API_VERSION)
+			.contentType(MediaType.APPLICATION_JSON)
+			.body(request)
+			.retrieve()
+			.body(QueryResponse.class);
 	}
 
 	record QueryRequest(List<Filter> filters, int flags) {
@@ -185,10 +184,10 @@ class MarketplaceSource implements StoreSource {
 				return null;
 			}
 			return this.statistics.stream()
-					.filter(statistic -> statistic.statisticName().equals(name))
-					.map(Statistic::value)
-					.findFirst()
-					.orElse(null);
+				.filter(statistic -> statistic.statisticName().equals(name))
+				.map(Statistic::value)
+				.findFirst()
+				.orElse(null);
 		}
 
 		long statisticOrZero(String name) {

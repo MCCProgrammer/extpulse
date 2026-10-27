@@ -28,9 +28,9 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Stateless security: a client logs in once, gets a signed token (JWT) and sends it
- * as {@code Authorization: Bearer <token>} on every request. The app signs and checks
- * its own tokens, so there is no session and no external identity server.
+ * Stateless security: a client logs in once, gets a signed token (JWT) and sends it as
+ * {@code Authorization: Bearer <token>} on every request. The app signs and checks its
+ * own tokens, so there is no session and no external identity server.
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(AuthProperties.class)
@@ -44,17 +44,24 @@ class SecurityConfiguration {
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.authorizeHttpRequests((requests) -> requests
-				.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
-				.requestMatchers("/actuator/health/**", "/actuator/info", "/error").permitAll()
-				// The API description and Swagger UI: public, like the API's own docs would be.
-				.requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
-				.requestMatchers("/api/admin/**").hasAuthority("SCOPE_admin")
-				.anyRequest().authenticated())
+		http.authorizeHttpRequests(
+				(requests) -> requests.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login")
+					.permitAll()
+					.requestMatchers("/actuator/health/**", "/actuator/info", "/error")
+					.permitAll()
+					// The API description and Swagger UI: public, like the API's own docs
+					// would be.
+					.requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
+					.permitAll()
+					.requestMatchers("/api/admin/**")
+					.hasAuthority("SCOPE_admin")
+					.anyRequest()
+					.authenticated())
 			.oauth2ResourceServer((resourceServer) -> resourceServer.jwt(Customizer.withDefaults()))
 			.sessionManagement((sessions) -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			// CSRF abuses credentials the browser sends by itself (cookies). The token
-			// travels in a header that only our client code sets, so there is nothing to abuse.
+			// travels in a header that only our client code sets, so there is nothing to
+			// abuse.
 			.csrf((csrf) -> csrf.disable());
 		return http.build();
 	}
@@ -91,8 +98,8 @@ class SecurityConfiguration {
 	@Bean
 	JwtDecoder jwtDecoder(SecretKey jwtSigningKey) {
 		NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSigningKey)
-				.macAlgorithm(MacAlgorithm.HS256)
-				.build();
+			.macAlgorithm(MacAlgorithm.HS256)
+			.build();
 		// Signature, expiry (with a minute of clock skew) and that we issued it.
 		decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(ISSUER));
 		return decoder;

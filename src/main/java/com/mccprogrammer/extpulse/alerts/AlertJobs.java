@@ -25,7 +25,8 @@ class AlertJobs {
 
 	@EventListener
 	void afterCollection(CollectionFinished event) {
-		// Runs inside the collection's call: a failure here must not turn into a failed run.
+		// Runs inside the collection's call: a failure here must not turn into a failed
+		// run.
 		try {
 			this.alerts.evaluate();
 			this.alerts.deliverPending();

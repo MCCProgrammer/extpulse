@@ -21,10 +21,8 @@ public final class TestAccounts {
 
 	/** Registers the account and returns a login token for it. */
 	public static String tokenFor(MockMvc mvc, String email) throws Exception {
-		mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-			.content("""
-					{"email": "%s", "password": "%s"}""".formatted(email, PASSWORD)))
-			.andExpect(status().isCreated());
+		mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
+				{"email": "%s", "password": "%s"}""".formatted(email, PASSWORD))).andExpect(status().isCreated());
 		return login(mvc, email);
 	}
 
@@ -41,9 +39,8 @@ public final class TestAccounts {
 	}
 
 	private static String login(MockMvc mvc, String email) throws Exception {
-		String body = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-			.content("""
-					{"email": "%s", "password": "%s"}""".formatted(email, PASSWORD)))
+		String body = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+				{"email": "%s", "password": "%s"}""".formatted(email, PASSWORD)))
 			.andExpect(status().isOk())
 			.andReturn()
 			.getResponse()
