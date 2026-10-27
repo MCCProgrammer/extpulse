@@ -1,0 +1,110 @@
+# Production, on the Oracle Cloud server in /opt/extpulse. deploy.sh runs it with the
+# image tag being deployed. Secrets (database password, JWT key) are in .env, which is
+# created on the server and never leaves it.
+# Its own project name: on a machine that also runs the development compose.yaml (also
+# "extpulse"), the two would share containers and volumes.
+name: extpulse-production
+
+x-logging: &logging
+  # Container logs are kept, but bounded: 5 files of 10 MB per service.
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '5'
+
+services:
+  app:
+    image: ghcr.io/mccprogrammer/extpulse:${EXTPULSE_IMAGE_TAG:?set by deploy.sh}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/extpulse
+      SPRING_DATASOURCE_USERNAME: extpulse
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?missing from .env}
+      EXTPULSE_AUTH_JWT_SECRET: ${EXTPULSE_AUTH_JWT_SECRET:?missing from .env}
+      EXTPULSE_AUTH_REGISTRATION_OPEN: 'false'
+      EXTPULSE_AUTH_REGISTRATION_ALLOW_LIST: ${EXTPULSE_AUTH_REGISTRATION_ALLOW_LIST:-}
+      # Behind Caddy: trust its X-Forwarded-* headers, so the app knows it is served over HTTPS.
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+    # Optional settings that only exist once chosen, such as the SMTP provider for alert
+    # emails (SPRING_MAIL_HOST, _PORT, _USERNAME, _PASSWORD). Alerts by Discord work without it.
+    env_file:
+      - path: ./app.env
+        required: false
+    # The heap is 75% of this (see the Dockerfile).
+    mem_limit: 1g
+    healthcheck:
+      # The image has no curl or wget; bash can make the HTTP request itself.
+      test:
+        - CMD
+        - bash
+        - -c
+        - exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /actuator/health HTTP/1.0\r\n\r\n' >&3 && grep -q '"status":"UP"' <&3
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    logging: *logging
+
+  postgres:
+    # The same major version as development and tests.
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: extpulse
+      POSTGRES_USER: extpulse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?missing from .env}
+    # No ports: only the app and the backup reach it, inside this Compose network.
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    mem_limit: 512m
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U extpulse -d extpulse']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    logging: *logging
+
+  caddy:
+    # HTTPS with certificates from Let's Encrypt, obtained and renewed by Caddy.
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      EXTPULSE_DOMAIN: ${EXTPULSE_DOMAIN:-extpulse.mccprogrammer.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    mem_limit: 128m
+    logging: *logging
+
+  backup:
+    # A pg_dump every day into ./backups on the server, keeping 14 days.
+    image: postgres:17
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: extpulse
+      PGDATABASE: extpulse
+      PGPASSWORD: ${POSTGRES_PASSWORD:?missing from .env}
+    volumes:
+      - ./backup.sh:/backup.sh:ro
+      - ./backups:/backups
+    entrypoint: ['sh', '/backup.sh']
+    mem_limit: 128m
+    logging: *logging
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

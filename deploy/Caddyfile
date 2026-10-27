@@ -1,0 +1,19 @@
+# The only public entry point: HTTPS for the domain, redirects from HTTP, and the app
+# behind it. Caddy obtains and renews the certificate from Let's Encrypt by itself.
+{$EXTPULSE_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	reverse_proxy app:8080
+
+	log {
+		output stdout
+		format json
+	}
+}

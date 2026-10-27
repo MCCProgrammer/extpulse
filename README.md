@@ -6,7 +6,7 @@
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
 
-> **Status:** in development. Accounts, publishers, stats, a reviews inbox and alerts (email and Discord) work through the REST API, and the daily collection runs on its own. Deploy is next.
+> **Status:** in development. Accounts, publishers, stats, a reviews inbox and alerts (email and Discord) work through the REST API, and the daily collection runs on its own. The production setup and automatic deploys are ready; the server is being created.
 
 ## Why
 
@@ -41,7 +41,8 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Container | Multi-stage Docker image (Temurin 25 JRE, layered, non-root, arm64), published to GitHub Container Registry |
 | Local services | Docker Compose |
 | Infrastructure | Terraform: Oracle Cloud Always Free (network, firewall, an Arm VM with cloud-init, a budget alert) |
-| CI | GitHub Actions: build and tests, coverage gate, Arm image, secret scan (gitleaks) |
+| Production | Docker Compose on the VM, Caddy (automatic HTTPS, Let's Encrypt), daily `pg_dump` backups |
+| CI/CD | GitHub Actions: build and tests, coverage gate, Arm image, secret scan (gitleaks), deploy over SSH with health check and rollback |
 | Code quality | Spring Java Format (checked in the build), CodeQL, SonarQube Cloud, Dependabot |
 
 Why each choice was made: [docs/decisions](docs/decisions).
@@ -145,9 +146,10 @@ src/main/resources/
 ├── application.yaml           configuration
 └── db/migration/              Flyway migrations (V1__..., V2__...)
 compose.yaml                   local PostgreSQL, and Mailpit for alert emails
-.github/workflows/ci.yml       build and tests on every push
+.github/workflows/ci.yml       build, tests, image and deploy on every push
 .github/workflows/live-stores.yml  weekly test against the real stores
 infra/oracle/                  Terraform for the server (Oracle Cloud Always Free)
+deploy/                        what runs on the server, and how to operate it
 docs/decisions/                architecture decision records
 ```
 
