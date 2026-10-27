@@ -37,7 +37,7 @@ the accounts on this server are only the maintainer's.
 - Deploys need a short restart of the app (seconds); with one server there is no
   rolling update.
 - Backups are on the same disk as the database: they help with mistakes and bad
-  migrations, not with losing the VM. Copies to Object Storage are the next step.
+  migrations, not with losing the VM. Copies to Object Storage came next (ADR 0017).
 - A database migration that the previous version can't run on is not undone by the
   rollback; migrations stay additive.
 

@@ -12,3 +12,8 @@ output "image" {
   description = "The Ubuntu build the server was created from."
   value       = data.oci_core_images.ubuntu.images[0].display_name
 }
+
+output "backup_namespace" {
+  description = "The Object Storage namespace of the backups bucket: OCI_NAMESPACE in the server's .env."
+  value       = data.oci_objectstorage_namespace.this.namespace
+}

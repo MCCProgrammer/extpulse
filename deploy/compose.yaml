@@ -111,6 +111,29 @@ services:
     mem_limit: 128m
     logging: *logging
 
+  offsite:
+    # A copy of each backup in Oracle Object Storage, off this server (offsite.sh). It
+    # signs in as the server itself (instance principal): no key here or in .env.
+    image: rclone/rclone:1.75.2
+    restart: unless-stopped
+    environment:
+      # The remote is defined here, in memory: no rclone.conf.
+      RCLONE_CONFIG: ''
+      RCLONE_CONFIG_OFFSITE_TYPE: oracleobjectstorage
+      RCLONE_CONFIG_OFFSITE_PROVIDER: instance_principal_auth
+      # From `terraform output backup_namespace`; until it is in .env, copies are off.
+      RCLONE_CONFIG_OFFSITE_NAMESPACE: ${OCI_NAMESPACE:-}
+      RCLONE_CONFIG_OFFSITE_REGION: eu-madrid-1
+      # The bucket is Terraform's; the server isn't allowed to create or change it.
+      RCLONE_CONFIG_OFFSITE_NO_CHECK_BUCKET: 'true'
+      OFFSITE_BUCKET: extpulse-backups
+    volumes:
+      - ./offsite.sh:/offsite.sh:ro
+      - ./backups:/backups:ro
+    entrypoint: ['sh', '/offsite.sh']
+    mem_limit: 128m
+    logging: *logging
+
   # Monitoring. The web interfaces listen on the server's localhost only: they are
   # opened through an SSH tunnel (deploy/README.md), never from the internet.
   prometheus:

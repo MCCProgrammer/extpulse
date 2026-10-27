@@ -196,7 +196,7 @@ jobs:
       - name: Deploy
         run: |
           # The files and folders of deploy/, as one archive over the same SSH connection.
-          tar -C deploy -czf - compose.yaml Caddyfile backup.sh deploy.sh prometheus alertmanager grafana \
+          tar -C deploy -czf - compose.yaml Caddyfile backup.sh offsite.sh deploy.sh prometheus alertmanager grafana \
             | ssh -o StrictHostKeyChecking=yes "deploy@${DEPLOY_HOST}" tar -xzf - -C /opt/extpulse
           ssh -o StrictHostKeyChecking=yes "deploy@${DEPLOY_HOST}" bash /opt/extpulse/deploy.sh "sha-${GITHUB_SHA::7}"
 
