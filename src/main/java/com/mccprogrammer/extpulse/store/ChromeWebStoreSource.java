@@ -93,9 +93,6 @@ class ChromeWebStoreSource implements StoreSource {
 					}
 					return new Response(new String(answer.getBody().readAllBytes(), StandardCharsets.UTF_8), null);
 				}, true);
-				if (response == null) {
-					throw new StoreException(store(), "page of " + externalId + " returned nothing");
-				}
 				if (response.html() != null) {
 					return response.html();
 				}
