@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars (ignored by Git) and fill in.
+tenancy_ocid          = "ocid1.tenancy.oc1..aaaa..."
+admin_ssh_public_key  = "ssh-ed25519 AAAA... extpulse-admin"
+deploy_ssh_public_key = "ssh-ed25519 AAAA... extpulse-deploy"
+budget_alert_email    = "you@example.com"
