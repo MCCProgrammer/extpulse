@@ -33,3 +33,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    ignore:
+      # A new PostgreSQL major needs its data migrated (pg_upgrade) and the same version
+      # in TestcontainersConfiguration: a planned change, not a weekly update.
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
