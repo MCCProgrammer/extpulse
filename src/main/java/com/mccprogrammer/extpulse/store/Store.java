@@ -5,10 +5,21 @@ package com.mccprogrammer.extpulse.store;
  */
 public enum Store {
 
-	VS_MARKETPLACE,
+	VS_MARKETPLACE("VS Code Marketplace"),
 
-	OPEN_VSX,
+	OPEN_VSX("Open VSX"),
 
-	CHROME_WEB_STORE
+	CHROME_WEB_STORE("Chrome Web Store");
+
+	private final String displayName;
+
+	Store(String displayName) {
+		this.displayName = displayName;
+	}
+
+	/** The store's name as people write it, for messages. */
+	public String displayName() {
+		return this.displayName;
+	}
 
 }

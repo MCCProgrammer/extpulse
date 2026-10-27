@@ -221,7 +221,8 @@ class CollectionServiceTests {
 		ResilientStoreCalls calls = new ResilientStoreCalls(
 				new CollectionProperties(2, Duration.ofMillis(1), Duration.ofMillis(1)));
 		CollectionService service = new CollectionService(this.listings, this.runs, this.snapshots, this.reviews, calls,
-				List.of(this.marketplace, this.openVsx), Clock.fixed(now, LISBON));
+				List.of(this.marketplace, this.openVsx), Clock.fixed(now, LISBON), (event) -> {
+				});
 		return service.collect();
 	}
 

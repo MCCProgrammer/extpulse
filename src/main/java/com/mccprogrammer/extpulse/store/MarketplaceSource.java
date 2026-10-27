@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -124,13 +125,19 @@ class MarketplaceSource implements StoreSource {
 				List.of(new Filter(List.of(new Criterion(filterType, value)), 1, pageSize)), FLAGS);
 		QueryResponse response;
 		try {
-			response = this.http.post()
-					.uri("/_apis/public/gallery/extensionquery")
-					.header(HttpHeaders.ACCEPT, API_VERSION)
-					.contentType(MediaType.APPLICATION_JSON)
-					.body(request)
-					.retrieve()
-					.body(QueryResponse.class);
+			response = send(request);
+		}
+		catch (ResourceAccessException ex) {
+			// The query only reads, but it is a POST. When a kept-alive connection turns out
+			// to be closed, the JDK client sends a GET again by itself, never a POST; so a
+			// read that failed on the connection gets one more try here.
+			try {
+				response = send(request);
+			}
+			catch (RestClientException retryEx) {
+				retryEx.addSuppressed(ex);
+				throw new StoreException(store(), "query for " + value + " failed", retryEx);
+			}
 		}
 		catch (RestClientException ex) {
 			throw new StoreException(store(), "query for " + value + " failed", ex);
@@ -140,6 +147,16 @@ class MarketplaceSource implements StoreSource {
 		}
 		List<Extension> extensions = response.results().getFirst().extensions();
 		return (extensions != null) ? extensions : List.of();
+	}
+
+	private QueryResponse send(QueryRequest request) {
+		return this.http.post()
+				.uri("/_apis/public/gallery/extensionquery")
+				.header(HttpHeaders.ACCEPT, API_VERSION)
+				.contentType(MediaType.APPLICATION_JSON)
+				.body(request)
+				.retrieve()
+				.body(QueryResponse.class);
 	}
 
 	record QueryRequest(List<Filter> filters, int flags) {

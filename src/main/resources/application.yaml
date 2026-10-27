@@ -23,6 +23,12 @@ spring:
   flyway:
     locations: classpath:db/migration
 
+  # Alert emails. In development they go to Mailpit from compose.yaml; production sets
+  # SPRING_MAIL_HOST, _PORT, _USERNAME and _PASSWORD (for example, Amazon SES over SMTP).
+  mail:
+    host: localhost
+    port: 1025
+
 extpulse:
   # The time zone of "a day": snapshot dates and schedules. Timestamps stay in UTC.
   zone: Europe/Lisbon
@@ -43,6 +49,19 @@ extpulse:
     # At most one request per second to each store, so none of them blocks us.
     min-interval-per-store: 1s
 
+  alerts:
+    mail-from: ExtPulse <alerts@extpulse.local>
+    # Discord webhooks must start with one of these: the app calls the URL a user gives,
+    # so it only calls Discord.
+    discord-webhook-prefixes:
+      - https://discord.com/api/webhooks/
+      - https://discordapp.com/api/webhooks/
+    # Alerts that couldn't be sent are tried again every 5 minutes, up to 5 times.
+    delivery-cron: "0 */5 * * * *"
+    max-attempts: 5
+    # The weekly summary: Mondays at 08:00 in extpulse.zone, about the week before.
+    weekly-summary-cron: "0 0 8 * * MON"
+
   stores:
     marketplace-url: https://marketplace.visualstudio.com
     open-vsx-url: https://open-vsx.org
@@ -52,6 +71,11 @@ extpulse:
     read-timeout: 10s
 
 management:
+  health:
+    mail:
+      # A mail server that is down doesn't make the app unhealthy: alerts that can't be
+      # sent stay in the outbox and are retried. Health stays about the app and its database.
+      enabled: false
   endpoints:
     web:
       exposure:

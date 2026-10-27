@@ -107,7 +107,7 @@ class CatalogApiTests {
 
 	@Test
 	void listingsAnotherAccountTracksAreAConflict() throws Exception {
-		addPublisher(this.token, "MCCProgrammer");
+		addPublisher(this.token, "MCCProgrammer").andExpect(status().isCreated());
 		String other = TestAccounts.tokenFor(this.mvc, "someone@example.com");
 
 		addPublisher(other, "MCCProgrammer").andExpect(status().isConflict())

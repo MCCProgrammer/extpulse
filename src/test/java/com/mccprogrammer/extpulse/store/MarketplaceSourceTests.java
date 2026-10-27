@@ -101,6 +101,31 @@ class MarketplaceSourceTests {
 	}
 
 	@Test
+	void aDroppedConnectionIsTriedOnceMore() {
+		marketplace.stubFor(post(QUERY).inScenario("dropped")
+			.whenScenarioStateIs(com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED)
+			.willReturn(aResponse().withFault(com.github.tomakehurst.wiremock.http.Fault.CONNECTION_RESET_BY_PEER))
+			.willSetStateTo("reset once"));
+		marketplace.stubFor(post(QUERY).inScenario("dropped")
+			.whenScenarioStateIs("reset once")
+			.willReturn(aResponse().withHeader("Content-Type", "application/json")
+				.withBodyFile("marketplace/diff-checker.json")));
+
+		assertThat(this.source.fetchStats("MCCProgrammer.diff-checker").installs()).isEqualTo(1764);
+		marketplace.verify(2, postRequestedFor(urlEqualTo(QUERY)));
+	}
+
+	@Test
+	void aConnectionDroppedTwiceIsAStoreException() {
+		marketplace.stubFor(post(QUERY)
+			.willReturn(aResponse().withFault(com.github.tomakehurst.wiremock.http.Fault.CONNECTION_RESET_BY_PEER)));
+
+		assertThatThrownBy(() -> this.source.fetchStats("MCCProgrammer.diff-checker"))
+			.isInstanceOf(StoreException.class);
+		marketplace.verify(2, postRequestedFor(urlEqualTo(QUERY)));
+	}
+
+	@Test
 	void aSlowAnswerTimesOut() {
 		marketplace.stubFor(post(QUERY).willReturn(aResponse()
 			.withFixedDelay((int) StoreTestSupport.READ_TIMEOUT.toMillis() * 4)
