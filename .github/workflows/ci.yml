@@ -143,3 +143,44 @@ jobs:
           # Reuse unchanged layers (the libraries) between runs.
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    # Pushes to main that built and published an image go to the server: the files in
+    # deploy/ are copied to /opt/extpulse, and deploy.sh starts the new image (and goes
+    # back to the previous one if it doesn't become healthy). Skipped until the repository
+    # variable DEPLOY_HOST is set, so the pipeline works before there is a server.
+    needs: [image, secrets]
+    if: github.event_name == 'push' && vars.DEPLOY_HOST != ''
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://extpulse.mccprogrammer.com
+    # One deploy at a time; a newer one waits instead of cancelling one halfway through.
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    env:
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # The private key of the server's deploy user, and the server's host key, so SSH
+      # refuses any other machine answering at that address.
+      - name: SSH key and known host
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          scp -o StrictHostKeyChecking=yes deploy/compose.yaml deploy/Caddyfile deploy/backup.sh deploy/deploy.sh "deploy@${DEPLOY_HOST}:/opt/extpulse/"
+          ssh -o StrictHostKeyChecking=yes "deploy@${DEPLOY_HOST}" bash /opt/extpulse/deploy.sh "sha-${GITHUB_SHA::7}"
+
+      # The same check as a visitor: through DNS, Caddy and the certificate.
+      - name: Check from outside
+        run: curl --proto '=https' --tlsv1.2 -sSf --retry 10 --retry-delay 6 --retry-all-errors https://extpulse.mccprogrammer.com/actuator/health
