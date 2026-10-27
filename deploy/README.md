@@ -9,6 +9,7 @@ this way: [ADR 0014](../docs/decisions/0014-deploy-and-operations.md).
 | `Caddyfile` | HTTPS for the domain, security headers, proxy to the app |
 | `deploy.sh` | Starts one image tag, waits for it to be healthy, rolls back if not |
 | `backup.sh` | `pg_dump` every day at 03:00 UTC, keeping 14 days |
+| `offsite.sh` | Copies the dumps to Object Storage, off the server, at 03:30 UTC |
 | `prometheus/` | What Prometheus reads (the app's metrics) and the alert rules |
 | `alertmanager/` | Where alerts go: a Discord channel |
 | `grafana/` | Grafana's data source and the ExtPulse dashboard |
@@ -17,7 +18,7 @@ On the server only, never in the repository:
 
 | File | What it holds |
 | --- | --- |
-| `.env` | `POSTGRES_PASSWORD`, `EXTPULSE_AUTH_JWT_SECRET` and `GRAFANA_ADMIN_PASSWORD`, created by deploys; `EXTPULSE_AUTH_REGISTRATION_ALLOW_LIST`, added by hand |
+| `.env` | `POSTGRES_PASSWORD`, `EXTPULSE_AUTH_JWT_SECRET` and `GRAFANA_ADMIN_PASSWORD`, created by deploys; `EXTPULSE_AUTH_REGISTRATION_ALLOW_LIST` and `OCI_NAMESPACE`, added by hand |
 | `alertmanager/discord-webhook` | The Discord webhook URL for monitoring alerts; empty until set |
 | `app.env` | Optional settings, such as the SMTP provider (`SPRING_MAIL_*`) |
 | `.deployed-tag` | The tag running now |
@@ -44,6 +45,16 @@ On the server only, never in the repository:
    printf '%s\n' 'https://discord.com/api/webhooks/...' > alertmanager/discord-webhook
    docker compose restart alertmanager
    ```
+
+6. Turn on the copies to Object Storage: the namespace is
+   `terraform output -raw backup_namespace` in `infra/oracle`. Then on the server:
+   ```sh
+   echo 'OCI_NAMESPACE=<namespace>' >> .env
+   ./deploy.sh "$(cat .deployed-tag)"
+   docker compose logs offsite
+   ```
+   The log ends with `offsite copy done: N dumps in extpulse-backups`. Right after the
+   server is created, its permission can take a few minutes to apply.
 
 ## Everyday
 
@@ -113,3 +124,25 @@ docker compose start app
 
 To look inside a dump without touching production, restore it into another database:
 `createdb -U extpulse restore_test`, then the same `pg_restore` with `-d restore_test`.
+
+### Copies off the server
+
+Every dump also goes to the bucket `extpulse-backups` in Object Storage, kept 30 days
+([ADR 0017](../docs/decisions/0017-offsite-backups.md)). The server can add and read them,
+not replace or delete them. A copy now, and the list in the bucket:
+
+```sh
+docker compose exec offsite sh /offsite.sh now
+docker compose exec offsite rclone lsl offsite:extpulse-backups
+```
+
+If the server is lost, create a new one with Terraform (the permission follows the new
+server), deploy, and bring the newest dump back before restoring it as above:
+
+```sh
+docker compose run --rm --no-deps -v ./backups:/restore --entrypoint rclone offsite \
+  copy offsite:extpulse-backups/extpulse-2026-10-28T0300Z.dump /restore
+```
+
+Without a server, any dump can also be downloaded from the Oracle Cloud console:
+Storage → Buckets → `extpulse-backups`.

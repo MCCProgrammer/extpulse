@@ -22,3 +22,4 @@ changes gets a new record that replaces the old one.
 | [0014](0014-deploy-and-operations.md) | Deploy and operations: Compose on the server, deploys from CI |
 | [0015](0015-website.md) | The website: Thymeleaf pages in the same app, signed in with a session |
 | [0016](0016-observability.md) | Observability: JSON logs, Prometheus, Grafana and Alertmanager on the server |
+| [0017](0017-offsite-backups.md) | Backups off the server: Object Storage, write-only for the server |
