@@ -50,14 +50,14 @@ class OpenVsxSource implements StoreSource {
 		}
 		// The namespace lists names only; the display name needs one call per extension.
 		return namespace.extensions()
-				.keySet()
-				.stream()
-				.map(name -> extension(publisher, name))
-				.map(extension -> new DiscoveredListing(store(), extension.namespace() + "/" + extension.name(),
-						DiscoveredListing.vsCodeExtensionKey(extension.namespace(), extension.name()),
-						extension.displayName(),
-						this.baseUrl + "/extension/" + extension.namespace() + "/" + extension.name()))
-				.toList();
+			.keySet()
+			.stream()
+			.map(name -> extension(publisher, name))
+			.map(extension -> new DiscoveredListing(store(), extension.namespace() + "/" + extension.name(),
+					DiscoveredListing.vsCodeExtensionKey(extension.namespace(), extension.name()),
+					extension.displayName(),
+					this.baseUrl + "/extension/" + extension.namespace() + "/" + extension.name()))
+			.toList();
 	}
 
 	@Override
@@ -66,13 +66,14 @@ class OpenVsxSource implements StoreSource {
 		Extension extension = extension(parts[0], parts[1]);
 		BigDecimal ratingAvg = (extension.averageRating() != null) ? BigDecimal.valueOf(extension.averageRating())
 				: null;
-		return new ListingStats(orZero(extension.downloadCount()), ratingAvg,
-				(int) orZero(extension.reviewCount()), extension.version());
+		return new ListingStats(orZero(extension.downloadCount()), ratingAvg, (int) orZero(extension.reviewCount()),
+				extension.version());
 	}
 
 	/**
 	 * Open VSX reviews have no ID, and a user can leave one review per extension, so the
-	 * author ({@code github:login}) identifies the review. There are no publisher replies.
+	 * author ({@code github:login}) identifies the review. There are no publisher
+	 * replies.
 	 */
 	@Override
 	public List<StoreReview> fetchReviews(String externalId) {
@@ -80,9 +81,9 @@ class OpenVsxSource implements StoreSource {
 		Reviews reviews;
 		try {
 			reviews = this.http.get()
-					.uri("/api/{namespace}/{name}/reviews", parts[0], parts[1])
-					.retrieve()
-					.body(Reviews.class);
+				.uri("/api/{namespace}/{name}/reviews", parts[0], parts[1])
+				.retrieve()
+				.body(Reviews.class);
 		}
 		catch (HttpClientErrorException.NotFound ex) {
 			throw new ListingNotFoundException(store(), externalId);
@@ -94,11 +95,11 @@ class OpenVsxSource implements StoreSource {
 			return List.of();
 		}
 		return reviews.reviews()
-				.stream()
-				.map((review) -> new StoreReview(review.user().provider() + ":" + review.user().loginName(),
-						review.rating(), (review.comment() == null || review.comment().isBlank()) ? null : review.comment(),
-						review.user().loginName(), null, review.timestamp(), null))
-				.toList();
+			.stream()
+			.map((review) -> new StoreReview(review.user().provider() + ":" + review.user().loginName(),
+					review.rating(), (review.comment() == null || review.comment().isBlank()) ? null : review.comment(),
+					review.user().loginName(), null, review.timestamp(), null))
+			.toList();
 	}
 
 	private static String[] namespaceAndName(String externalId) {
@@ -113,9 +114,9 @@ class OpenVsxSource implements StoreSource {
 		Extension extension;
 		try {
 			extension = this.http.get()
-					.uri("/api/{namespace}/{name}", namespace, name)
-					.retrieve()
-					.body(Extension.class);
+				.uri("/api/{namespace}/{name}", namespace, name)
+				.retrieve()
+				.body(Extension.class);
 		}
 		catch (HttpClientErrorException.NotFound ex) {
 			throw new ListingNotFoundException(store(), namespace + "/" + name);

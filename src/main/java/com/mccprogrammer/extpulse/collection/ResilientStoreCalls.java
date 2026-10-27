@@ -21,9 +21,9 @@ import io.github.resilience4j.retry.RetryConfig;
 import org.springframework.stereotype.Component;
 
 /**
- * Calls a store the way the collection should: paced (one request per interval to
- * each store) and retried with growing waits when the store fails. A listing the
- * store doesn't have, or an ID it can't take, is not retried: asking again won't help.
+ * Calls a store the way the collection should: paced (one request per interval to each
+ * store) and retried with growing waits when the store fails. A listing the store doesn't
+ * have, or an ID it can't take, is not retried: asking again won't help.
  */
 @Component
 class ResilientStoreCalls {
@@ -39,16 +39,16 @@ class ResilientStoreCalls {
 
 	ResilientStoreCalls(CollectionProperties properties) {
 		this.retry = Retry.of("stores", RetryConfig.custom()
-				.maxAttempts(properties.attempts())
-				.intervalFunction(IntervalFunction.ofExponentialBackoff(properties.firstRetryWait(), BACKOFF_MULTIPLIER))
-				.retryExceptions(StoreException.class)
-				.ignoreExceptions(ListingNotFoundException.class)
-				.build());
+			.maxAttempts(properties.attempts())
+			.intervalFunction(IntervalFunction.ofExponentialBackoff(properties.firstRetryWait(), BACKOFF_MULTIPLIER))
+			.retryExceptions(StoreException.class)
+			.ignoreExceptions(ListingNotFoundException.class)
+			.build());
 		RateLimiterConfig pace = RateLimiterConfig.custom()
-				.limitForPeriod(1)
-				.limitRefreshPeriod(properties.minIntervalPerStore())
-				.timeoutDuration(MAX_WAIT_FOR_TURN)
-				.build();
+			.limitForPeriod(1)
+			.limitRefreshPeriod(properties.minIntervalPerStore())
+			.timeoutDuration(MAX_WAIT_FOR_TURN)
+			.build();
 		for (Store store : Store.values()) {
 			this.paces.put(store, RateLimiter.of(store.name(), pace));
 		}

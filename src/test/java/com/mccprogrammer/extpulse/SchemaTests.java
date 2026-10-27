@@ -15,8 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * The database itself enforces the rules that matter, so a bug in the code
- * can't break them.
+ * The database itself enforces the rules that matter, so a bug in the code can't break
+ * them.
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
@@ -37,14 +37,16 @@ class SchemaTests {
 		// Other test classes share the database and commit their data; start from empty.
 		jdbc.sql("DELETE FROM users").update();
 		userId = insertUser("miguel@example.com");
-		long publisherId = jdbc.sql("INSERT INTO publishers (user_id, name) VALUES (:user, 'MCCProgrammer') RETURNING id")
-				.param("user", userId)
-				.query(Long.class)
-				.single();
-		extensionId = jdbc.sql("INSERT INTO extensions (publisher_id, display_name) VALUES (:publisher, 'Diff Checker') RETURNING id")
-				.param("publisher", publisherId)
-				.query(Long.class)
-				.single();
+		long publisherId = jdbc
+			.sql("INSERT INTO publishers (user_id, name) VALUES (:user, 'MCCProgrammer') RETURNING id")
+			.param("user", userId)
+			.query(Long.class)
+			.single();
+		extensionId = jdbc
+			.sql("INSERT INTO extensions (publisher_id, display_name) VALUES (:publisher, 'Diff Checker') RETURNING id")
+			.param("publisher", publisherId)
+			.query(Long.class)
+			.single();
 		listingId = insertListing("VS_MARKETPLACE", "MCCProgrammer.diff-checker");
 	}
 
@@ -53,7 +55,7 @@ class SchemaTests {
 		insertSnapshot("2026-10-21", 1700);
 
 		assertThatThrownBy(() -> insertSnapshot("2026-10-21", 1729))
-				.isInstanceOf(DataIntegrityViolationException.class);
+			.isInstanceOf(DataIntegrityViolationException.class);
 	}
 
 	@Test
@@ -66,8 +68,7 @@ class SchemaTests {
 
 	@Test
 	void rejectsNegativeInstalls() {
-		assertThatThrownBy(() -> insertSnapshot("2026-10-21", -1))
-				.isInstanceOf(DataIntegrityViolationException.class);
+		assertThatThrownBy(() -> insertSnapshot("2026-10-21", -1)).isInstanceOf(DataIntegrityViolationException.class);
 	}
 
 	@Test
@@ -75,28 +76,26 @@ class SchemaTests {
 		assertThatThrownBy(() -> jdbc.sql("""
 				INSERT INTO snapshots (listing_id, taken_on, installs, rating_avg)
 				VALUES (:listing, DATE '2026-10-21', 1700, :rating)""")
-				.param("listing", listingId)
-				.param("rating", new BigDecimal("5.01"))
-				.update())
-				.isInstanceOf(DataIntegrityViolationException.class);
+			.param("listing", listingId)
+			.param("rating", new BigDecimal("5.01"))
+			.update()).isInstanceOf(DataIntegrityViolationException.class);
 	}
 
 	@Test
 	void rejectsAnUnknownStore() {
 		assertThatThrownBy(() -> insertListing("APP_STORE", "MCCProgrammer.diff-checker"))
-				.isInstanceOf(DataIntegrityViolationException.class);
+			.isInstanceOf(DataIntegrityViolationException.class);
 	}
 
 	@Test
 	void rejectsTheSameListingTwiceInOneStore() {
 		assertThatThrownBy(() -> insertListing("VS_MARKETPLACE", "MCCProgrammer.diff-checker"))
-				.isInstanceOf(DataIntegrityViolationException.class);
+			.isInstanceOf(DataIntegrityViolationException.class);
 	}
 
 	@Test
 	void rejectsTheSameEmailWithDifferentCase() {
-		assertThatThrownBy(() -> insertUser("MIGUEL@example.com"))
-				.isInstanceOf(DataIntegrityViolationException.class);
+		assertThatThrownBy(() -> insertUser("MIGUEL@example.com")).isInstanceOf(DataIntegrityViolationException.class);
 	}
 
 	@Test
@@ -113,26 +112,28 @@ class SchemaTests {
 
 	private long insertUser(String email) {
 		return jdbc.sql("INSERT INTO users (email, password_hash) VALUES (:email, 'x') RETURNING id")
-				.param("email", email)
-				.query(Long.class)
-				.single();
+			.param("email", email)
+			.query(Long.class)
+			.single();
 	}
 
 	private long insertListing(String store, String externalId) {
-		return jdbc.sql("INSERT INTO listings (extension_id, store, external_id) VALUES (:extension, :store, :externalId) RETURNING id")
-				.param("extension", extensionId)
-				.param("store", store)
-				.param("externalId", externalId)
-				.query(Long.class)
-				.single();
+		return jdbc.sql(
+				"INSERT INTO listings (extension_id, store, external_id) VALUES (:extension, :store, :externalId) RETURNING id")
+			.param("extension", extensionId)
+			.param("store", store)
+			.param("externalId", externalId)
+			.query(Long.class)
+			.single();
 	}
 
 	private void insertSnapshot(String day, long installs) {
-		jdbc.sql("INSERT INTO snapshots (listing_id, taken_on, installs) VALUES (:listing, CAST(:day AS date), :installs)")
-				.param("listing", listingId)
-				.param("day", day)
-				.param("installs", installs)
-				.update();
+		jdbc.sql(
+				"INSERT INTO snapshots (listing_id, taken_on, installs) VALUES (:listing, CAST(:day AS date), :installs)")
+			.param("listing", listingId)
+			.param("day", day)
+			.param("installs", installs)
+			.update();
 	}
 
 	private long count(String table) {

@@ -12,8 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * One thing a user wants to be told, and where: for example, reviews of 2 stars or
- * less, to a Discord channel.
+ * One thing a user wants to be told, and where: for example, reviews of 2 stars or less,
+ * to a Discord channel.
  */
 @Entity
 @Table(name = "alert_rules")

@@ -33,7 +33,8 @@ class CatalogController {
 	/** Finds the publisher on every store and tracks all its extensions. */
 	@PostMapping("/api/publishers")
 	@ResponseStatus(HttpStatus.CREATED)
-	PublisherResponse addPublisher(@AuthenticationPrincipal Jwt token, @Valid @RequestBody AddPublisherRequest request) {
+	PublisherResponse addPublisher(@AuthenticationPrincipal Jwt token,
+			@Valid @RequestBody AddPublisherRequest request) {
 		return PublisherResponse.of(this.catalog.addPublisher(AuthenticatedAccount.id(token), request.name()));
 	}
 
@@ -48,7 +49,8 @@ class CatalogController {
 	/** An extension the stores can't find by publisher, such as a Chrome extension. */
 	@PostMapping("/api/extensions")
 	@ResponseStatus(HttpStatus.CREATED)
-	ExtensionResponse addExtension(@AuthenticationPrincipal Jwt token, @Valid @RequestBody AddExtensionRequest request) {
+	ExtensionResponse addExtension(@AuthenticationPrincipal Jwt token,
+			@Valid @RequestBody AddExtensionRequest request) {
 		Extension extension = this.catalog.addExtension(AuthenticatedAccount.id(token), request.publisherId(),
 				request.displayName());
 		return new ExtensionResponse(extension.getId(), extension.getDisplayName(), List.of());
@@ -59,13 +61,12 @@ class CatalogController {
 	@ResponseStatus(HttpStatus.CREATED)
 	ListingResponse addListing(@AuthenticationPrincipal Jwt token, @PathVariable long id,
 			@Valid @RequestBody AddListingRequest request) {
-		return ListingResponse.of(
-				this.catalog.addListing(AuthenticatedAccount.id(token), id, request.store(), request.externalId()));
+		return ListingResponse
+			.of(this.catalog.addListing(AuthenticatedAccount.id(token), id, request.store(), request.externalId()));
 	}
 
-	record AddPublisherRequest(
-			@NotBlank @Size(max = 100) @Pattern(regexp = "[A-Za-z0-9][A-Za-z0-9._-]*",
-					message = "letters, digits, dots, dashes and underscores") String name) {
+	record AddPublisherRequest(@NotBlank @Size(max = 100) @Pattern(regexp = "[A-Za-z0-9][A-Za-z0-9._-]*",
+			message = "letters, digits, dots, dashes and underscores") String name) {
 	}
 
 	record AddExtensionRequest(@NotNull Long publisherId, @NotBlank @Size(max = 200) String displayName) {

@@ -42,7 +42,10 @@ class StatsService {
 		this.clock = clock;
 	}
 
-	/** Every extension of the user, with today's installs and the gain over the last 7 days. */
+	/**
+	 * Every extension of the user, with today's installs and the gain over the last 7
+	 * days.
+	 */
 	List<ExtensionOverview> overview(long userId) {
 		LocalDate today = LocalDate.now(this.clock);
 		Map<Long, List<ListingRow>> byExtension = new LinkedHashMap<>();
@@ -52,7 +55,8 @@ class StatsService {
 		return byExtension.values()
 			.stream()
 			.map(StatsService::overviewOf)
-			.sorted(Comparator.comparing(ExtensionOverview::installs).reversed()
+			.sorted(Comparator.comparing(ExtensionOverview::installs)
+				.reversed()
 				.thenComparing(ExtensionOverview::displayName))
 			.toList();
 	}
@@ -61,9 +65,9 @@ class StatsService {
 		ListingRow first = rows.getFirst();
 		List<ListingOverview> listings = rows.stream()
 			.filter((row) -> row.listingId() != null)
-			.map((row) -> new ListingOverview(row.listingId(), row.store(), row.externalId(), row.url(),
-					row.installs(), difference(row.installs(), row.installsWeekBefore()), row.ratingAvg(),
-					row.ratingCount(), row.version(), row.takenOn()))
+			.map((row) -> new ListingOverview(row.listingId(), row.store(), row.externalId(), row.url(), row.installs(),
+					difference(row.installs(), row.installsWeekBefore()), row.ratingAvg(), row.ratingCount(),
+					row.version(), row.takenOn()))
 			.toList();
 		long installs = listings.stream().mapToLong((listing) -> orZero(listing.installs())).sum();
 		return new ExtensionOverview(first.extensionId(), first.displayName(), first.publisher(), installs,
@@ -84,7 +88,10 @@ class StatsService {
 		if (ChronoUnit.DAYS.between(start, end) + 1 > MAX_DAYS) {
 			throw ApiProblem.of(HttpStatus.BAD_REQUEST, "At most " + MAX_DAYS + " days at a time");
 		}
-		List<Point> days = this.queries.dailySeries(extensionId, start, end).stream().map(StatsService::pointOf).toList();
+		List<Point> days = this.queries.dailySeries(extensionId, start, end)
+			.stream()
+			.map(StatsService::pointOf)
+			.toList();
 		List<Point> points = (granularity == Granularity.WEEK) ? byWeek(days) : days;
 		return new Series(extension.getId(), extension.getDisplayName(), start, end, granularity, points);
 	}
@@ -97,7 +104,10 @@ class StatsService {
 		return new Point(row.day(), row.installs(), byStore, row.gain());
 	}
 
-	/** A week is its Monday, the installs on its last day in range and the sum of its gains. */
+	/**
+	 * A week is its Monday, the installs on its last day in range and the sum of its
+	 * gains.
+	 */
 	private static List<Point> byWeek(List<Point> days) {
 		Map<LocalDate, List<Point>> weeks = new LinkedHashMap<>();
 		for (Point day : days) {

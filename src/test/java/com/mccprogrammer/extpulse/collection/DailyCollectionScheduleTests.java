@@ -41,8 +41,7 @@ class DailyCollectionScheduleTests {
 	}
 
 	private Instant nextRunAfter(CronTask task, String instant) {
-		SimpleTriggerContext context = new SimpleTriggerContext(
-				Clock.fixed(Instant.parse(instant), ZoneOffset.UTC));
+		SimpleTriggerContext context = new SimpleTriggerContext(Clock.fixed(Instant.parse(instant), ZoneOffset.UTC));
 		return task.getTrigger().nextExecution(context);
 	}
 

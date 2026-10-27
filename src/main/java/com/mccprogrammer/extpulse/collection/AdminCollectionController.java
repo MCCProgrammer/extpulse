@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Runs the collection now, for admins (/api/admin/** needs the ADMIN role): to recover a
- * day whose run failed, or to see the first numbers right after adding a publisher.
- * Safe next to the scheduled run, since snapshots are upserted.
+ * day whose run failed, or to see the first numbers right after adding a publisher. Safe
+ * next to the scheduled run, since snapshots are upserted.
  */
 @RestController
 class AdminCollectionController {

@@ -26,8 +26,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Adds what a user tracks: publishers (found on every store at once), extensions and
- * listings. Store calls always happen before the transaction that saves the result,
- * so no database connection waits on the network.
+ * listings. Store calls always happen before the transaction that saves the result, so no
+ * database connection waits on the network.
  */
 @Service
 public class CatalogService {
@@ -54,8 +54,8 @@ public class CatalogService {
 	}
 
 	/**
-	 * Looks the publisher up on every store and saves one extension per extension
-	 * found, with a listing for each store that has it.
+	 * Looks the publisher up on every store and saves one extension per extension found,
+	 * with a listing for each store that has it.
 	 */
 	AddedPublisher addPublisher(long userId, String name) {
 		if (this.publishers.existsByUserIdAndName(userId, name)) {
@@ -83,7 +83,8 @@ public class CatalogService {
 			return this.transactions.execute((status) -> savePublisher(userId, name, found));
 		}
 		catch (DataIntegrityViolationException ex) {
-			// Someone added the same publisher or listing between the checks and the save.
+			// Someone added the same publisher or listing between the checks and the
+			// save.
 			throw ApiProblem.of(HttpStatus.CONFLICT, "This publisher or one of its listings was just added", ex);
 		}
 	}
@@ -102,15 +103,16 @@ public class CatalogService {
 			group.sort(Comparator.comparing(DiscoveredListing::store));
 			String displayName = group.getFirst().displayName();
 			if (!usedNames.add(displayName)) {
-				// extensions are unique by (publisher, display name); keep both by telling them apart.
+				// extensions are unique by (publisher, display name); keep both by
+				// telling them apart.
 				displayName = displayName + " (" + entry.getKey() + ")";
 				usedNames.add(displayName);
 			}
 			Extension extension = this.extensions.save(new Extension(publisher.getId(), displayName));
 			List<Listing> saved = group.stream()
-					.map((listing) -> this.listings.save(new Listing(extension.getId(), listing.store(),
-							listing.externalId(), listing.url())))
-					.toList();
+				.map((listing) -> this.listings
+					.save(new Listing(extension.getId(), listing.store(), listing.externalId(), listing.url())))
+				.toList();
 			added.add(new AddedExtension(extension, saved));
 		}
 		return new AddedPublisher(publisher, added);
@@ -119,8 +121,8 @@ public class CatalogService {
 	/** An extension the stores can't find by publisher, such as a Chrome extension. */
 	Extension addExtension(long userId, long publisherId, String displayName) {
 		Publisher publisher = this.publishers.findById(publisherId)
-				.filter((candidate) -> candidate.getUserId() == userId)
-				.orElseThrow(() -> ApiProblem.of(HttpStatus.NOT_FOUND, "You have no publisher " + publisherId));
+			.filter((candidate) -> candidate.getUserId() == userId)
+			.orElseThrow(() -> ApiProblem.of(HttpStatus.NOT_FOUND, "You have no publisher " + publisherId));
 		try {
 			return this.extensions.saveAndFlush(new Extension(publisher.getId(), displayName));
 		}
@@ -166,7 +168,7 @@ public class CatalogService {
 	 */
 	public Extension requireOwnedExtension(long userId, long extensionId) {
 		return this.extensions.findOwned(extensionId, userId)
-				.orElseThrow(() -> ApiProblem.of(HttpStatus.NOT_FOUND, "You have no extension " + extensionId));
+			.orElseThrow(() -> ApiProblem.of(HttpStatus.NOT_FOUND, "You have no extension " + extensionId));
 	}
 
 	private void requireUntracked(Store store, String externalId) {

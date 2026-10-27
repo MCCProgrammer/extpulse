@@ -18,8 +18,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * What each rule finds, over data written straight to the database, with the clock
- * fixed on Monday 2026-10-26, 07:00 UTC (07:00 in Lisbon).
+ * What each rule finds, over data written straight to the database, with the clock fixed
+ * on Monday 2026-10-26, 07:00 UTC (07:00 in Lisbon).
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest(properties = { "extpulse.collection.cron=-", "extpulse.alerts.delivery-cron=-",
@@ -63,8 +63,9 @@ class AlertDetectionTests {
 		this.user = id("INSERT INTO users (email, password_hash) VALUES ('miguel@example.com', 'x') RETURNING id");
 		long publisher = id("INSERT INTO publishers (user_id, name) VALUES (%d, 'MCCProgrammer') RETURNING id"
 			.formatted(this.user));
-		this.diffChecker = id("INSERT INTO extensions (publisher_id, display_name) VALUES (%d, 'Diff Checker') RETURNING id"
-			.formatted(publisher));
+		this.diffChecker = id(
+				"INSERT INTO extensions (publisher_id, display_name) VALUES (%d, 'Diff Checker') RETURNING id"
+					.formatted(publisher));
 		this.marketplace = listing(this.diffChecker, "VS_MARKETPLACE", "MCCProgrammer.diff-checker", "2026-09-01");
 	}
 
@@ -103,10 +104,11 @@ class AlertDetectionTests {
 
 		this.alerts.evaluate();
 
-		assertThat(events()).singleElement().satisfies((event) -> assertThat(event)
-			.containsEntry("title", "Diff Checker 0.3.1 is on VS Code Marketplace")
-			.containsEntry("message", "The version before was 0.3.0.")
-			.containsEntry("dedup_key", "version:" + this.marketplace + ":0.3.1"));
+		assertThat(events()).singleElement()
+			.satisfies(
+					(event) -> assertThat(event).containsEntry("title", "Diff Checker 0.3.1 is on VS Code Marketplace")
+						.containsEntry("message", "The version before was 0.3.0.")
+						.containsEntry("dedup_key", "version:" + this.marketplace + ":0.3.1"));
 	}
 
 	@Test
@@ -130,9 +132,10 @@ class AlertDetectionTests {
 
 		this.alerts.evaluate();
 
-		assertThat(events()).singleElement().satisfies((event) -> assertThat(event)
-			.containsEntry("title", "Diff Checker: +60 installs on VS Code Marketplace on 26 Oct")
-			.containsEntry("message", "Usually about 4 a day over the two weeks before."));
+		assertThat(events()).singleElement()
+			.satisfies((event) -> assertThat(event)
+				.containsEntry("title", "Diff Checker: +60 installs on VS Code Marketplace on 26 Oct")
+				.containsEntry("message", "Usually about 4 a day over the two weeks before."));
 	}
 
 	@Test
@@ -154,9 +157,10 @@ class AlertDetectionTests {
 		rule("COLLECTION_FAILING", null);
 		snapshot(this.marketplace, "2026-10-24", 1760, "0.3.1");
 		long run = id("INSERT INTO collection_runs (started_at, status) VALUES (now(), 'PARTIAL') RETURNING id");
-		this.jdbc.sql("""
-				INSERT INTO collection_run_errors (run_id, listing_id, store, external_id, message)
-				VALUES (:run, :listing, 'VS_MARKETPLACE', 'MCCProgrammer.diff-checker', 'stats: VS_MARKETPLACE: 503')""")
+		this.jdbc
+			.sql("""
+					INSERT INTO collection_run_errors (run_id, listing_id, store, external_id, message)
+					VALUES (:run, :listing, 'VS_MARKETPLACE', 'MCCProgrammer.diff-checker', 'stats: VS_MARKETPLACE: 503')""")
 			.param("run", run)
 			.param("listing", this.marketplace)
 			.update();
@@ -169,9 +173,11 @@ class AlertDetectionTests {
 		assertThat(events()).extracting((event) -> event.get("title"))
 			.containsExactlyInAnyOrder("No new numbers for Diff Checker on VS Code Marketplace since 2026-10-24",
 					"No new numbers for Diff Checker on Chrome Web Store since it was added");
-		assertThat(events()).filteredOn((event) -> event.get("dedup_key").equals("failing:" + this.marketplace + ":2026-10-24"))
+		assertThat(events())
+			.filteredOn((event) -> event.get("dedup_key").equals("failing:" + this.marketplace + ":2026-10-24"))
 			.singleElement()
-			.satisfies((event) -> assertThat((String) event.get("message")).endsWith("Last error: stats: VS_MARKETPLACE: 503"));
+			.satisfies((event) -> assertThat((String) event.get("message"))
+				.endsWith("Last error: stats: VS_MARKETPLACE: 503"));
 		assertThat(neverCollected).isPositive();
 	}
 
@@ -179,8 +185,8 @@ class AlertDetectionTests {
 	void theWeeklySummaryAddsUpLastWeekPerExtensionAndStore() {
 		rule("WEEKLY_SUMMARY", null);
 		long openVsx = listing(this.diffChecker, "OPEN_VSX", "MCCProgrammer/diff-checker", "2026-09-01");
-		long markify = listing(
-				id("INSERT INTO extensions (publisher_id, display_name) SELECT publisher_id, 'Markify' FROM extensions WHERE id = %d RETURNING id"
+		long markify = listing(id(
+				"INSERT INTO extensions (publisher_id, display_name) SELECT publisher_id, 'Markify' FROM extensions WHERE id = %d RETURNING id"
 					.formatted(this.diffChecker)),
 				"OPEN_VSX", "MCCProgrammer/markify", "2026-09-01");
 		snapshot(this.marketplace, "2026-10-18", 1700, null);
@@ -213,9 +219,11 @@ class AlertDetectionTests {
 	void anotherAccountsListingsDoNotAlertMe() {
 		rule("LOW_RATING", null);
 		long other = id("INSERT INTO users (email, password_hash) VALUES ('someone@example.com', 'x') RETURNING id");
-		long theirPublisher = id("INSERT INTO publishers (user_id, name) VALUES (%d, 'Someone') RETURNING id".formatted(other));
-		long theirExtension = id("INSERT INTO extensions (publisher_id, display_name) VALUES (%d, 'Theirs') RETURNING id"
-			.formatted(theirPublisher));
+		long theirPublisher = id(
+				"INSERT INTO publishers (user_id, name) VALUES (%d, 'Someone') RETURNING id".formatted(other));
+		long theirExtension = id(
+				"INSERT INTO extensions (publisher_id, display_name) VALUES (%d, 'Theirs') RETURNING id"
+					.formatted(theirPublisher));
 		long theirListing = listing(theirExtension, "OPEN_VSX", "Someone/theirs", "2026-09-01");
 		this.jdbc.sql("""
 				INSERT INTO reviews (listing_id, external_id, rating, author, posted_at, first_seen_at)
@@ -237,8 +245,8 @@ class AlertDetectionTests {
 	private long listing(long extension, String store, String externalId, String createdOn) {
 		return id("""
 				INSERT INTO listings (extension_id, store, external_id, created_at)
-				VALUES (%d, '%s', '%s', TIMESTAMPTZ '%s 00:00:00Z') RETURNING id""".formatted(extension, store, externalId,
-				createdOn));
+				VALUES (%d, '%s', '%s', TIMESTAMPTZ '%s 00:00:00Z') RETURNING id""".formatted(extension, store,
+				externalId, createdOn));
 	}
 
 	private void snapshot(long listing, String day, long installs, String version) {
@@ -267,10 +275,11 @@ class AlertDetectionTests {
 	}
 
 	private void review(String externalId, int rating, String text, String postedAt, String firstSeenAt) {
-		this.jdbc.sql("""
-				INSERT INTO reviews (listing_id, external_id, rating, text, author, product_version, posted_at, first_seen_at)
-				VALUES (:listing, :externalId, :rating, :text, 'Reviewer', '1.0.0', CAST(:postedAt AS timestamptz),
-				        CAST(:firstSeenAt AS timestamptz))""")
+		this.jdbc
+			.sql("""
+					INSERT INTO reviews (listing_id, external_id, rating, text, author, product_version, posted_at, first_seen_at)
+					VALUES (:listing, :externalId, :rating, :text, 'Reviewer', '1.0.0', CAST(:postedAt AS timestamptz),
+					        CAST(:firstSeenAt AS timestamptz))""")
 			.param("listing", this.marketplace)
 			.param("externalId", externalId)
 			.param("rating", rating)

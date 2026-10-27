@@ -71,7 +71,8 @@ class AlertController {
 					(rule.getChannel() == AlertChannel.DISCORD) ? hideToken(rule.getTarget()) : rule.getTarget());
 		}
 
-		// A webhook URL is .../webhooks/{id}/{token}; anyone with the token can post to the channel.
+		// A webhook URL is .../webhooks/{id}/{token}; anyone with the token can post to
+		// the channel.
 		private static String hideToken(String url) {
 			int lastSlash = url.lastIndexOf('/');
 			return (lastSlash > 0) ? url.substring(0, lastSlash + 1) + "****" : "****";

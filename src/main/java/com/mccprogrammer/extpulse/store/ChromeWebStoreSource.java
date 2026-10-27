@@ -16,11 +16,11 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 /**
- * The Chrome Web Store has no public API for stats, so this reads the item's page.
- * It matches the visible English text ("37 users", "5 out of 5", "2 ratings") rather
- * than CSS classes, which are generated and change with every release of the site.
- * When the page changes anyway, this throws a {@link StoreException} instead of
- * guessing; the weekly live-stores workflow is there to notice.
+ * The Chrome Web Store has no public API for stats, so this reads the item's page. It
+ * matches the visible English text ("37 users", "5 out of 5", "2 ratings") rather than
+ * CSS classes, which are generated and change with every release of the site. When the
+ * page changes anyway, this throws a {@link StoreException} instead of guessing; the
+ * weekly live-stores workflow is there to notice.
  */
 @Component
 class ChromeWebStoreSource implements StoreSource {
@@ -29,11 +29,13 @@ class ChromeWebStoreSource implements StoreSource {
 
 	private static final Pattern USERS = Pattern.compile("(\\d[\\d,]*)\\+? users?\\b");
 
-	private static final Pattern RATING = Pattern.compile("(\\d(?:\\.\\d+)?) out of 5 (No ratings|(\\d[\\d,]*) ratings?)");
+	private static final Pattern RATING = Pattern
+		.compile("(\\d(?:\\.\\d+)?) out of 5 (No ratings|(\\d[\\d,]*) ratings?)");
 
 	private static final Pattern VERSION = Pattern.compile("Version (\\S+) Updated");
 
-	// From the EU there are three: cookie consent, back to the store, then the item's name.
+	// From the EU there are three: cookie consent, back to the store, then the item's
+	// name.
 	private static final int MAX_REDIRECTS = 5;
 
 	private final RestClient http;
@@ -86,7 +88,8 @@ class ChromeWebStoreSource implements StoreSource {
 						return new Response(null, redirectTarget(current, answer.getHeaders().getFirst("Location")));
 					}
 					if (answer.getStatusCode().isError()) {
-						throw new StoreException(store(), "page of " + externalId + " answered " + answer.getStatusCode());
+						throw new StoreException(store(),
+								"page of " + externalId + " answered " + answer.getStatusCode());
 					}
 					return new Response(new String(answer.getBody().readAllBytes(), StandardCharsets.UTF_8), null);
 				}, true);
@@ -102,14 +105,15 @@ class ChromeWebStoreSource implements StoreSource {
 		catch (RestClientException ex) {
 			throw new StoreException(store(), "page of " + externalId + " failed", ex);
 		}
-		throw new StoreException(store(), "page of " + externalId + " redirected more than " + MAX_REDIRECTS + " times");
+		throw new StoreException(store(),
+				"page of " + externalId + " redirected more than " + MAX_REDIRECTS + " times");
 	}
 
 	/**
 	 * Where a redirect points. The store answers /detail/{id} with a 301 to
 	 * /detail/{item-name}/{id}, and the name goes out as raw UTF-8 ("director’s-cut").
-	 * The JDK reads header bytes as ISO-8859-1, which turns that into characters a
-	 * URI can't hold; this puts the bytes back together and percent-encodes them.
+	 * The JDK reads header bytes as ISO-8859-1, which turns that into characters a URI
+	 * can't hold; this puts the bytes back together and percent-encodes them.
 	 */
 	static URI redirectTarget(URI from, String location) {
 		if (location == null) {
@@ -148,7 +152,8 @@ class ChromeWebStoreSource implements StoreSource {
 	private Matcher find(Pattern pattern, String text, String externalId, String what) {
 		Matcher matcher = pattern.matcher(text);
 		if (!matcher.find()) {
-			throw new StoreException(store(), "no " + what + " on the page of " + externalId + "; has the page changed?");
+			throw new StoreException(store(),
+					"no " + what + " on the page of " + externalId + "; has the page changed?");
 		}
 		return matcher;
 	}

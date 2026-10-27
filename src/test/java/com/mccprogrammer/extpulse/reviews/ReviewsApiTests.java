@@ -50,17 +50,18 @@ class ReviewsApiTests {
 		this.token = TestAccounts.tokenFor(this.mvc, "miguel@example.com");
 		long publisher = id("INSERT INTO publishers (user_id, name) VALUES (%d, 'MCCProgrammer') RETURNING id"
 			.formatted(TestAccounts.idOf(this.jdbc, "miguel@example.com")));
-		long diffChecker = id("INSERT INTO extensions (publisher_id, display_name) VALUES (%d, 'Diff Checker') RETURNING id"
-			.formatted(publisher));
+		long diffChecker = id(
+				"INSERT INTO extensions (publisher_id, display_name) VALUES (%d, 'Diff Checker') RETURNING id"
+					.formatted(publisher));
 		this.markify = id("INSERT INTO extensions (publisher_id, display_name) VALUES (%d, 'Markify') RETURNING id"
 			.formatted(publisher));
 		long diffMarketplace = listing(diffChecker, "VS_MARKETPLACE", "MCCProgrammer.diff-checker");
 		long markifyOpenVsx = listing(this.markify, "OPEN_VSX", "MCCProgrammer/markify");
 		long markifyMarketplace = listing(this.markify, "VS_MARKETPLACE", "MCCProgrammer.markify");
 
-		this.writer.save(diffMarketplace, List.of(
-				review("1", 1, "hard to see", "2026-01-29T15:11:13Z", "Thanks, fixed in 0.2.0"),
-				review("2", 5, "great", "2026-03-01T10:00:00Z", null)));
+		this.writer.save(diffMarketplace,
+				List.of(review("1", 1, "hard to see", "2026-01-29T15:11:13Z", "Thanks, fixed in 0.2.0"),
+						review("2", 5, "great", "2026-03-01T10:00:00Z", null)));
 		this.writer.save(markifyOpenVsx, List.of(review("github:someone", 2, null, "2026-05-01T10:00:00Z", null)));
 		this.writer.save(markifyMarketplace, List.of(review("3", 4, "nice", "2026-04-01T10:00:00Z", null)));
 	}
@@ -69,7 +70,8 @@ class ReviewsApiTests {
 	void listsEveryStoresReviewsNewestFirst() throws Exception {
 		inbox("").andExpect(status().isOk())
 			.andExpect(jsonPath("$.total").value(4))
-			.andExpect(jsonPath("$.items[*].text").value(contains(nullValue(), equalTo("nice"), equalTo("great"), equalTo("hard to see"))))
+			.andExpect(jsonPath("$.items[*].text")
+				.value(contains(nullValue(), equalTo("nice"), equalTo("great"), equalTo("hard to see"))))
 			.andExpect(jsonPath("$.items[0].store").value("OPEN_VSX"))
 			.andExpect(jsonPath("$.items[0].extensionName").value("Markify"))
 			// Open VSX has no replies; on the Marketplace, whether you replied.
@@ -83,15 +85,18 @@ class ReviewsApiTests {
 	void filtersByStarsStoreExtensionAndReply() throws Exception {
 		inbox("?maxRating=2").andExpect(jsonPath("$.items[*].rating").value(contains(2, 1)));
 		inbox("?store=VS_MARKETPLACE").andExpect(jsonPath("$.total").value(3));
-		inbox("?extensionId=" + this.markify).andExpect(jsonPath("$.items[*].extensionName")
-			.value(contains("Markify", "Markify")));
-		// Marketplace reviews you haven't replied to; Open VSX ones never count as unanswered.
+		inbox("?extensionId=" + this.markify)
+			.andExpect(jsonPath("$.items[*].extensionName").value(contains("Markify", "Markify")));
+		// Marketplace reviews you haven't replied to; Open VSX ones never count as
+		// unanswered.
 		inbox("?unanswered=true").andExpect(jsonPath("$.items[*].text").value(contains("nice", "great")));
 	}
 
 	@Test
 	void marksReviewsAsReadAndFiltersThem() throws Exception {
-		long newest = this.jdbc.sql("SELECT id FROM reviews ORDER BY posted_at DESC LIMIT 1").query(Long.class).single();
+		long newest = this.jdbc.sql("SELECT id FROM reviews ORDER BY posted_at DESC LIMIT 1")
+			.query(Long.class)
+			.single();
 
 		markRead(this.token, newest, "true").andExpect(status().isNoContent());
 
@@ -114,9 +119,11 @@ class ReviewsApiTests {
 		inbox("?limit=0").andExpect(status().isBadRequest());
 		inbox("?store=APP_STORE").andExpect(status().isBadRequest());
 		long any = this.jdbc.sql("SELECT min(id) FROM reviews").query(Long.class).single();
-		this.mvc.perform(patch("/api/reviews/" + any).header("Authorization", "Bearer " + this.token)
-			.contentType(MediaType.APPLICATION_JSON)
-			.content("{}")).andExpect(status().isBadRequest());
+		this.mvc
+			.perform(patch("/api/reviews/" + any).header("Authorization", "Bearer " + this.token)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{}"))
+			.andExpect(status().isBadRequest());
 	}
 
 	@Test

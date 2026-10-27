@@ -9,9 +9,9 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 /**
- * Writes the day's snapshot of a listing. Plain SQL rather than JPA, because the
- * point is the upsert: a second write for the same listing and day replaces the
- * numbers instead of adding a row (or failing on the unique constraint).
+ * Writes the day's snapshot of a listing. Plain SQL rather than JPA, because the point is
+ * the upsert: a second write for the same listing and day replaces the numbers instead of
+ * adding a row (or failing on the unique constraint).
  */
 @Repository
 class SnapshotWriter {
@@ -33,13 +33,13 @@ class SnapshotWriter {
 				    version = EXCLUDED.version,
 				    collected_at = now()
 				""")
-				.param("listing", listingId)
-				.param("takenOn", takenOn)
-				.param("installs", stats.installs())
-				.param("ratingAvg", stats.ratingAvg(), Types.NUMERIC)
-				.param("ratingCount", stats.ratingCount())
-				.param("version", stats.version(), Types.VARCHAR)
-				.update();
+			.param("listing", listingId)
+			.param("takenOn", takenOn)
+			.param("installs", stats.installs())
+			.param("ratingAvg", stats.ratingAvg(), Types.NUMERIC)
+			.param("ratingCount", stats.ratingCount())
+			.param("version", stats.version(), Types.VARCHAR)
+			.update();
 	}
 
 }

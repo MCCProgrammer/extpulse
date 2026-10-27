@@ -8,7 +8,10 @@ public enum AlertType {
 	/** A new review with at most {@code threshold} stars (default 2). */
 	LOW_RATING,
 
-	/** A day's gain on a listing of at least {@code threshold} (default 10) and more than twice its usual. */
+	/**
+	 * A day's gain on a listing of at least {@code threshold} (default 10) and more than
+	 * twice its usual.
+	 */
 	INSTALL_SPIKE,
 
 	/** A listing shows a new version. */

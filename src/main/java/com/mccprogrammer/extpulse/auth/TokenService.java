@@ -11,8 +11,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
 /**
- * Issues the login token. The subject is the account ID; "scope" holds what the
- * account may do, which Spring Security reads as SCOPE_user / SCOPE_admin.
+ * Issues the login token. The subject is the account ID; "scope" holds what the account
+ * may do, which Spring Security reads as SCOPE_user / SCOPE_admin.
  */
 @Service
 class TokenService {
@@ -33,13 +33,13 @@ class TokenService {
 		Instant now = this.clock.instant();
 		Instant expiresAt = now.plus(this.properties.tokenValidity());
 		JwtClaimsSet claims = JwtClaimsSet.builder()
-				.issuer(SecurityConfiguration.ISSUER)
-				.subject(account.getId().toString())
-				.issuedAt(now)
-				.expiresAt(expiresAt)
-				.claim("email", account.getEmail())
-				.claim("scope", (account.getRole() == Role.ADMIN) ? "user admin" : "user")
-				.build();
+			.issuer(SecurityConfiguration.ISSUER)
+			.subject(account.getId().toString())
+			.issuedAt(now)
+			.expiresAt(expiresAt)
+			.claim("email", account.getEmail())
+			.claim("scope", (account.getRole() == Role.ADMIN) ? "user admin" : "user")
+			.build();
 		JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
 		String token = this.encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
 		return new IssuedToken(token, expiresAt);

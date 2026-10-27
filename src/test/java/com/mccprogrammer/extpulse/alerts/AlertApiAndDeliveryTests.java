@@ -109,8 +109,8 @@ class AlertApiAndDeliveryTests {
 			.andExpect(status().isCreated());
 
 		this.mvc.perform(get("/api/alerts").header("Authorization", "Bearer " + this.token))
-			.andExpect(jsonPath("$[*].target").value(org.hamcrest.Matchers.contains("miguel@example.com",
-					"team@example.com")));
+			.andExpect(jsonPath("$[*].target")
+				.value(org.hamcrest.Matchers.contains("miguel@example.com", "team@example.com")));
 	}
 
 	@Test
@@ -125,8 +125,10 @@ class AlertApiAndDeliveryTests {
 
 	@Test
 	void rejectsThresholdsThatMakeNoSenseAndDuplicates() throws Exception {
-		addRule("{\"type\": \"LOW_RATING\", \"channel\": \"EMAIL\", \"threshold\": 5}").andExpect(status().isBadRequest());
-		addRule("{\"type\": \"NEW_VERSION\", \"channel\": \"EMAIL\", \"threshold\": 3}").andExpect(status().isBadRequest());
+		addRule("{\"type\": \"LOW_RATING\", \"channel\": \"EMAIL\", \"threshold\": 5}")
+			.andExpect(status().isBadRequest());
+		addRule("{\"type\": \"NEW_VERSION\", \"channel\": \"EMAIL\", \"threshold\": 3}")
+			.andExpect(status().isBadRequest());
 		addRule("{\"type\": \"SOMETHING\", \"channel\": \"EMAIL\"}").andExpect(status().isBadRequest());
 
 		addRule("{\"type\": \"LOW_RATING\", \"channel\": \"EMAIL\"}").andExpect(status().isCreated());
@@ -154,8 +156,8 @@ class AlertApiAndDeliveryTests {
 			.andExpect(status().isNoContent());
 
 		discord.verify(postRequestedFor(urlEqualTo(WEBHOOK_PATH))
-			.withRequestBody(matchingJsonPath("$.content", com.github.tomakehurst.wiremock.client.WireMock
-				.containing("**ExtPulse test alert**")))
+			.withRequestBody(matchingJsonPath("$.content",
+					com.github.tomakehurst.wiremock.client.WireMock.containing("**ExtPulse test alert**")))
 			.withRequestBody(equalToJson("{\"allowed_mentions\": {\"parse\": []}}", true, true)));
 	}
 
@@ -192,11 +194,14 @@ class AlertApiAndDeliveryTests {
 		this.events.publishEvent(new CollectionFinished(1, CollectionRunStatus.SUCCEEDED, java.time.Instant.now()));
 		this.events.publishEvent(new CollectionFinished(2, CollectionRunStatus.SUCCEEDED, java.time.Instant.now()));
 
-		discord.verify(1, postRequestedFor(urlEqualTo(WEBHOOK_PATH))
-			.withRequestBody(matchingJsonPath("$.content", com.github.tomakehurst.wiremock.client.WireMock
-				.containing("1★ review of Diff Checker on VS Code Marketplace")))
-			.withRequestBody(equalToJson("{\"allowed_mentions\": {\"parse\": []}}", true, true)));
-		assertThat(this.jdbc.sql("SELECT sent_at IS NOT NULL FROM alert_events").query(Boolean.class).single()).isTrue();
+		discord.verify(1,
+				postRequestedFor(urlEqualTo(WEBHOOK_PATH))
+					.withRequestBody(matchingJsonPath("$.content",
+							com.github.tomakehurst.wiremock.client.WireMock
+								.containing("1★ review of Diff Checker on VS Code Marketplace")))
+					.withRequestBody(equalToJson("{\"allowed_mentions\": {\"parse\": []}}", true, true)));
+		assertThat(this.jdbc.sql("SELECT sent_at IS NOT NULL FROM alert_events").query(Boolean.class).single())
+			.isTrue();
 	}
 
 	@Test
@@ -224,7 +229,8 @@ class AlertApiAndDeliveryTests {
 		mail.stop();
 		this.alerts.evaluate();
 		this.alerts.deliverPending();
-		assertThat(this.jdbc.sql("SELECT sent_at IS NULL AND attempts = 1 FROM alert_events").query(Boolean.class)
+		assertThat(this.jdbc.sql("SELECT sent_at IS NULL AND attempts = 1 FROM alert_events")
+			.query(Boolean.class)
 			.single()).isTrue();
 
 		mail.start();
@@ -237,10 +243,11 @@ class AlertApiAndDeliveryTests {
 
 	private void freshOneStarReview(String text) {
 		long user = TestAccounts.idOf(this.jdbc, "miguel@example.com");
-		long publisher = id("INSERT INTO publishers (user_id, name) VALUES (%d, 'MCCProgrammer') RETURNING id"
-			.formatted(user));
-		long extension = id("INSERT INTO extensions (publisher_id, display_name) VALUES (%d, 'Diff Checker') RETURNING id"
-			.formatted(publisher));
+		long publisher = id(
+				"INSERT INTO publishers (user_id, name) VALUES (%d, 'MCCProgrammer') RETURNING id".formatted(user));
+		long extension = id(
+				"INSERT INTO extensions (publisher_id, display_name) VALUES (%d, 'Diff Checker') RETURNING id"
+					.formatted(publisher));
 		long listing = id("""
 				INSERT INTO listings (extension_id, store, external_id, created_at)
 				VALUES (%d, 'VS_MARKETPLACE', 'MCCProgrammer.diff-checker', now() - interval '30 days') RETURNING id"""

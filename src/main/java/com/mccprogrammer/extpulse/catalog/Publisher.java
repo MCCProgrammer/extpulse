@@ -10,8 +10,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * A publisher account on the stores (for example, MCCProgrammer), added by one user.
- * The user is referenced by ID: accounts belong to the auth package.
+ * A publisher account on the stores (for example, MCCProgrammer), added by one user. The
+ * user is referenced by ID: accounts belong to the auth package.
  */
 @Entity
 @Table(name = "publishers")

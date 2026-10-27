@@ -14,8 +14,8 @@ import org.springframework.stereotype.Repository;
  * <ul>
  * <li>A day without a snapshot (a failed collection) uses the listing's last known
  * number, so totals don't dip when one store couldn't be read.</li>
- * <li>Gains are counted per listing and then added up. A listing added later has no
- * gain on its first day, instead of its whole install count showing as one day's gain.</li>
+ * <li>Gains are counted per listing and then added up. A listing added later has no gain
+ * on its first day, instead of its whole install count showing as one day's gain.</li>
  * </ul>
  */
 @Repository
@@ -53,16 +53,16 @@ class StatsQueries {
 				WHERE p.user_id = :user
 				ORDER BY e.id, l.id
 				""")
-				.param("user", userId)
-				.param("day", day)
-				.param("weekBefore", weekBefore)
-				.query(ListingRow.class)
-				.list();
+			.param("user", userId)
+			.param("day", day)
+			.param("weekBefore", weekBefore)
+			.query(ListingRow.class)
+			.list();
 	}
 
 	/**
-	 * One row per day from {@code from} to {@code to}: the extension's installs (in
-	 * total and per store) and the day's gain. Days before the first snapshot are left out.
+	 * One row per day from {@code from} to {@code to}: the extension's installs (in total
+	 * and per store) and the day's gain. Days before the first snapshot are left out.
 	 */
 	List<DayRow> dailySeries(long extensionId, LocalDate from, LocalDate to) {
 		return this.jdbc.sql("""
@@ -101,12 +101,7 @@ class StatsQueries {
 				WHERE day >= :from
 				GROUP BY day
 				ORDER BY day
-				""")
-				.param("extension", extensionId)
-				.param("from", from)
-				.param("to", to)
-				.query(DayRow.class)
-				.list();
+				""").param("extension", extensionId).param("from", from).param("to", to).query(DayRow.class).list();
 	}
 
 	record ListingRow(long extensionId, String displayName, String publisher, Long listingId, Store store,

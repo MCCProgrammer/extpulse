@@ -40,8 +40,8 @@ class DiscordAlertSender implements AlertSender {
 
 	@Override
 	public void send(String target, AlertMessage message) {
-		// Checked when the rule is saved too; checked again because this is where the
-		// app calls a URL a user typed.
+		// Checked when the rule is saved too; checked again because this is where the app
+		// calls a URL a user typed.
 		if (!isWebhook(target)) {
 			throw new IllegalArgumentException("Not a Discord webhook URL");
 		}

@@ -5,8 +5,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.ErrorResponseException;
 
 /**
- * Shortcut for an error the API answers with: Spring MVC turns it into a Problem
- * Details response with this status and detail.
+ * Shortcut for an error the API answers with: Spring MVC turns it into a Problem Details
+ * response with this status and detail.
  */
 public final class ApiProblem {
 

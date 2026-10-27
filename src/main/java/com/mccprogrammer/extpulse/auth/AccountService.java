@@ -49,7 +49,8 @@ class AccountService {
 			return this.accounts.save(new UserAccount(normalizedEmail, this.passwordEncoder.encode(password)));
 		}
 		catch (DataIntegrityViolationException ex) {
-			// Two registrations with the same email at the same moment: the unique index decides.
+			// Two registrations with the same email at the same moment: the unique index
+			// decides.
 			throw new EmailAlreadyRegisteredException();
 		}
 	}
@@ -71,8 +72,9 @@ class AccountService {
 	static class EmailAlreadyRegisteredException extends ErrorResponseException {
 
 		EmailAlreadyRegisteredException() {
-			super(HttpStatus.CONFLICT, ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
-					"An account with this email already exists"), null);
+			super(HttpStatus.CONFLICT,
+					ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "An account with this email already exists"),
+					null);
 		}
 
 	}

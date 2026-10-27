@@ -20,13 +20,13 @@ final class StoreTestSupport {
 
 	static WireMockExtension wireMock() {
 		return WireMockExtension.newInstance()
-				.options(wireMockConfig().dynamicPort()
-					.usingFilesUnderClasspath("wiremock")
-					// Over plain http the JDK client tries an HTTP/2 upgrade (h2c), which
-					// WireMock's Jetty resets on requests with a body. The real stores are
-					// https, where HTTP/2 is negotiated without an upgrade.
-					.http2PlainDisabled(true))
-				.build();
+			.options(wireMockConfig().dynamicPort()
+				.usingFilesUnderClasspath("wiremock")
+				// Over plain http the JDK client tries an HTTP/2 upgrade (h2c), which
+				// WireMock's Jetty resets on requests with a body. The real stores are
+				// https, where HTTP/2 is negotiated without an upgrade.
+				.http2PlainDisabled(true))
+			.build();
 	}
 
 	/** Every store pointed at the given WireMock server, with short timeouts. */
