@@ -15,3 +15,4 @@ changes gets a new record that replaces the old one.
 | [0007](0007-accounts-and-jwt.md) | Accounts and stateless login with self-issued JWTs |
 | [0008](0008-catalog-and-stats.md) | The catalog API and how stats are computed |
 | [0009](0009-reviews.md) | Reviews: one inbox for every store |
+| [0010](0010-alerts.md) | Alerts through an outbox, by email and Discord |

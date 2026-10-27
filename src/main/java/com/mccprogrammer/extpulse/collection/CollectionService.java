@@ -14,6 +14,7 @@ import com.mccprogrammer.extpulse.store.StoreSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -41,14 +42,18 @@ public class CollectionService {
 
 	private final Clock clock;
 
+	private final ApplicationEventPublisher events;
+
 	CollectionService(ListingRepository listings, CollectionRunRepository runs, SnapshotWriter snapshots,
-			ReviewWriter reviews, ResilientStoreCalls calls, List<StoreSource> sources, Clock clock) {
+			ReviewWriter reviews, ResilientStoreCalls calls, List<StoreSource> sources, Clock clock,
+			ApplicationEventPublisher events) {
 		this.listings = listings;
 		this.runs = runs;
 		this.snapshots = snapshots;
 		this.reviews = reviews;
 		this.calls = calls;
 		this.clock = clock;
+		this.events = events;
 		for (StoreSource source : sources) {
 			if (this.sources.put(source.store(), source) != null) {
 				throw new IllegalStateException("Two sources for " + source.store());
@@ -91,6 +96,8 @@ public class CollectionService {
 		CollectionRun finished = this.runs.save(run);
 		logger.info("Collection run {} {}: {} collected, {} failed", finished.getId(), finished.getStatus(),
 				finished.getListingsSucceeded(), finished.getListingsFailed());
+		this.events.publishEvent(
+				new CollectionFinished(finished.getId(), finished.getStatus(), finished.getFinishedAt()));
 		return finished;
 	}
 
