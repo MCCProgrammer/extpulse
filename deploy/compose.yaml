@@ -30,6 +30,11 @@ services:
       SERVER_FORWARD_HEADERS_STRATEGY: framework
       # The dashboard's session cookie only travels over HTTPS.
       SERVER_SERVLET_SESSION_COOKIE_SECURE: 'true'
+      # The actuator (health, metrics) on its own port, which isn't published or
+      # proxied: Prometheus and the health check reach it inside this network only.
+      MANAGEMENT_SERVER_PORT: '8081'
+      # Logs as JSON (Elastic Common Schema), one object per line, with fields to filter on.
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
     # Optional settings that only exist once chosen, such as the SMTP provider for alert
     # emails (SPRING_MAIL_HOST, _PORT, _USERNAME, _PASSWORD). Alerts by Discord work without it.
     env_file:
@@ -43,7 +48,7 @@ services:
         - CMD
         - bash
         - -c
-        - exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /actuator/health HTTP/1.0\r\n\r\n' >&3 && grep -q '"status":"UP"' <&3
+        - exec 3<>/dev/tcp/127.0.0.1/8081 && printf 'GET /actuator/health HTTP/1.0\r\n\r\n' >&3 && grep -q '"status":"UP"' <&3
       interval: 15s
       timeout: 5s
       retries: 5
@@ -106,7 +111,63 @@ services:
     mem_limit: 128m
     logging: *logging
 
+  # Monitoring. The web interfaces listen on the server's localhost only: they are
+  # opened through an SSH tunnel (deploy/README.md), never from the internet.
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    ports:
+      - '127.0.0.1:9090:9090'
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    mem_limit: 384m
+    logging: *logging
+
+  alertmanager:
+    image: prom/alertmanager:v0.34.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    ports:
+      - '127.0.0.1:9093:9093'
+    volumes:
+      - ./alertmanager:/etc/alertmanager:ro
+      - alertmanager-data:/alertmanager
+    mem_limit: 64m
+    logging: *logging
+
+  grafana:
+    image: grafana/grafana:13.2.4
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?missing from .env}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_SERVER_ROOT_URL: http://localhost:3000
+      GF_ANALYTICS_REPORTING_ENABLED: 'false'
+      GF_ANALYTICS_CHECK_FOR_UPDATES: 'false'
+      GF_NEWS_NEWS_FEED_ENABLED: 'false'
+    ports:
+      - '127.0.0.1:3000:3000'
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    mem_limit: 256m
+    logging: *logging
+
 volumes:
   postgres-data:
   caddy-data:
   caddy-config:
+  prometheus-data:
+  alertmanager-data:
+  grafana-data:

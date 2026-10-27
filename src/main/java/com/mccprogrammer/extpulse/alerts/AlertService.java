@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import com.mccprogrammer.extpulse.ApiProblem;
 import com.mccprogrammer.extpulse.alerts.AlertDetector.Detection;
 import com.mccprogrammer.extpulse.alerts.AlertOutbox.Pending;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,8 +60,11 @@ class AlertService {
 
 	private final Clock clock;
 
+	private final MeterRegistry meters;
+
 	AlertService(AlertRuleRepository rules, AlertDetector detector, AlertOutbox outbox, List<AlertSender> senders,
-			DiscordAlertSender discord, AlertProperties properties, JdbcClient jdbc, Clock clock) {
+			DiscordAlertSender discord, AlertProperties properties, JdbcClient jdbc, Clock clock,
+			MeterRegistry meters) {
 		this.rules = rules;
 		this.detector = detector;
 		this.outbox = outbox;
@@ -68,6 +72,7 @@ class AlertService {
 		this.properties = properties;
 		this.jdbc = jdbc;
 		this.clock = clock;
+		this.meters = meters;
 		senders.forEach((sender) -> this.senders.put(sender.channel(), sender));
 	}
 
@@ -109,12 +114,18 @@ class AlertService {
 				this.senders.get(alert.channel())
 					.send(alert.target(), new AlertMessage(alert.title(), alert.message()));
 				this.outbox.sent(alert.id(), this.clock.instant());
+				delivered(alert.channel(), "sent");
 			}
 			catch (RuntimeException ex) {
 				logger.warn("Alert {} to {} failed: {}", alert.id(), alert.channel(), ex.getMessage());
 				this.outbox.failed(alert.id(), (ex.getMessage() != null) ? ex.getMessage() : ex.getClass().getName());
+				delivered(alert.channel(), "failed");
 			}
 		}
+	}
+
+	private void delivered(AlertChannel channel, String outcome) {
+		this.meters.counter("extpulse.alerts.delivered", "channel", channel.name(), "outcome", outcome).increment();
 	}
 
 	List<AlertRule> rulesOf(long userId) {

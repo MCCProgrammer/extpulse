@@ -7,16 +7,26 @@ cd "$(dirname "$0")"
 
 tag="${1:?usage: deploy.sh <image tag>}"
 
-# The first deploy creates the secrets here, on the server; they never leave it.
-if [ ! -f .env ]; then
-	umask 077
-	{
-		echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
-		echo "EXTPULSE_AUTH_JWT_SECRET=$(openssl rand -base64 48 | tr -d '\n')"
-	} >.env
-	echo "Created .env with new secrets"
-fi
+# Secrets are created here, on the server, the first time each is needed; they never
+# leave it.
+touch .env
+chmod 600 .env
+secret() {
+	if ! grep -q "^$1=" .env; then
+		echo "$1=$2" >>.env
+		echo "Created $1 in .env"
+	fi
+}
+secret POSTGRES_PASSWORD "$(openssl rand -hex 24)"
+secret EXTPULSE_AUTH_JWT_SECRET "$(openssl rand -base64 48 | tr -d '\n')"
+secret GRAFANA_ADMIN_PASSWORD "$(openssl rand -base64 24 | tr -d '\n/+=')"
 mkdir -p backups
+# Alertmanager reads the Discord webhook from this file (deploy/README.md). Empty until
+# it is set: alerts then fail to send, and say so in Alertmanager's log. Readable by the
+# container's user; the directory around it is closed to other users of the server.
+if [ ! -f alertmanager/discord-webhook ]; then
+	install -m 644 /dev/null alertmanager/discord-webhook
+fi
 
 previous="$(cat .deployed-tag 2>/dev/null || true)"
 
@@ -26,9 +36,10 @@ up() {
 	docker compose pull --quiet app
 	docker compose up -d --remove-orphans
 	# Compose recreates a service when its definition changes, not when a mounted file
-	# does: pick up the Caddyfile (a reload, without dropping connections) and backup.sh.
+	# does: pick up the Caddyfile (a reload, without dropping connections), backup.sh and
+	# the monitoring configuration.
 	docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile >/dev/null
-	docker compose restart backup >/dev/null
+	docker compose restart backup prometheus alertmanager grafana >/dev/null
 }
 
 healthy() {

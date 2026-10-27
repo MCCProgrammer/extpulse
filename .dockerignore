@@ -11,5 +11,6 @@ docs
 .DS_Store
 compose.yaml
 infra
+deploy
 Dockerfile
 .dockerignore

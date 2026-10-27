@@ -16,6 +16,7 @@ import com.mccprogrammer.extpulse.store.ListingStats;
 import com.mccprogrammer.extpulse.store.Store;
 import com.mccprogrammer.extpulse.store.StoreException;
 import com.mccprogrammer.extpulse.store.StoreReview;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -52,6 +53,8 @@ class CollectionServiceTests {
 
 	@Autowired
 	private JdbcClient jdbc;
+
+	private final SimpleMeterRegistry meters = new SimpleMeterRegistry();
 
 	private final FakeStoreSource marketplace = new FakeStoreSource(Store.VS_MARKETPLACE);
 
@@ -152,6 +155,26 @@ class CollectionServiceTests {
 	}
 
 	@Test
+	void metricsCountListingsByStoreAndOutcomeAndTimeTheRun() {
+		this.marketplace.fails(new StoreException(Store.VS_MARKETPLACE, "query failed"));
+		this.openVsx.answers(new ListingStats(1450, null, 0, "0.3.0"));
+
+		collectAt(MORNING);
+
+		assertThat(listings("VS_MARKETPLACE", "failed")).isEqualTo(1);
+		assertThat(listings("OPEN_VSX", "collected")).isEqualTo(1);
+		assertThat(this.meters.get("extpulse.collection.duration").tag("status", "PARTIAL").timer().count())
+			.isEqualTo(1);
+	}
+
+	private double listings(String store, String outcome) {
+		return this.meters.get("extpulse.collection.listings")
+			.tags("store", store, "outcome", outcome)
+			.counter()
+			.count();
+	}
+
+	@Test
 	void whenEveryListingFailsTheRunFailed() {
 		this.marketplace.fails(new StoreException(Store.VS_MARKETPLACE, "query failed"));
 		this.openVsx.fails(new StoreException(Store.OPEN_VSX, "503"));
@@ -225,7 +248,7 @@ class CollectionServiceTests {
 				new CollectionProperties(2, Duration.ofMillis(1), Duration.ofMillis(1)));
 		CollectionService service = new CollectionService(this.listings, this.runs, this.snapshots, this.reviews, calls,
 				List.of(this.marketplace, this.openVsx), Clock.fixed(now, LISBON), (event) -> {
-				});
+				}, this.meters);
 		return service.collect();
 	}
 

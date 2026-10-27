@@ -97,6 +97,23 @@ jobs:
           docker run --rm -v "$PWD":/work -w /work hashicorp/terraform:1.16.5 init -backend=false -input=false
           docker run --rm -v "$PWD":/work -w /work hashicorp/terraform:1.16.5 validate
 
+  monitoring:
+    # The monitoring configuration (deploy/): Prometheus' config and alert rules,
+    # Alertmanager's config and the Grafana dashboard, checked by the tools that read them.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check Prometheus, Alertmanager and Grafana files
+        working-directory: deploy
+        # The same versions as compose.yaml, which Dependabot keeps up to date.
+        run: |
+          prometheus=$(grep -o 'prom/prometheus:[^ ]*' compose.yaml)
+          alertmanager=$(grep -o 'prom/alertmanager:[^ ]*' compose.yaml)
+          docker run --rm -v "$PWD/prometheus":/etc/prometheus --entrypoint promtool "$prometheus" check config /etc/prometheus/prometheus.yml
+          docker run --rm -v "$PWD/alertmanager":/etc/alertmanager --entrypoint amtool "$alertmanager" check-config /etc/alertmanager/alertmanager.yml
+          python3 -m json.tool grafana/dashboards/extpulse.json > /dev/null
+
   image:
     # The production image. Built on an Arm runner, natively, because the server
     # (Oracle Cloud Ampere A1) is Arm. Pull requests build it to check the Dockerfile;
@@ -178,9 +195,12 @@ jobs:
 
       - name: Deploy
         run: |
-          scp -o StrictHostKeyChecking=yes deploy/compose.yaml deploy/Caddyfile deploy/backup.sh deploy/deploy.sh "deploy@${DEPLOY_HOST}:/opt/extpulse/"
+          # The files and folders of deploy/, as one archive over the same SSH connection.
+          tar -C deploy -czf - compose.yaml Caddyfile backup.sh deploy.sh prometheus alertmanager grafana \
+            | ssh -o StrictHostKeyChecking=yes "deploy@${DEPLOY_HOST}" tar -xzf - -C /opt/extpulse
           ssh -o StrictHostKeyChecking=yes "deploy@${DEPLOY_HOST}" bash /opt/extpulse/deploy.sh "sha-${GITHUB_SHA::7}"
 
-      # The same check as a visitor: through DNS, Caddy and the certificate.
+      # The same check as a visitor: the home page through DNS, the certificate and Caddy.
+      # (The actuator isn't public in production.)
       - name: Check from outside
-        run: curl --proto '=https' --tlsv1.2 -sSf --retry 10 --retry-delay 6 --retry-all-errors https://extpulse.mccprogrammer.com/actuator/health
+        run: curl --proto '=https' --tlsv1.2 -sSf -o /dev/null --retry 10 --retry-delay 6 --retry-all-errors https://extpulse.mccprogrammer.com/

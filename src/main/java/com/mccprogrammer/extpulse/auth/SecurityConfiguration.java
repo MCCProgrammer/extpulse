@@ -91,6 +91,11 @@ class SecurityConfiguration {
 			.permitAll()
 			.requestMatchers("/actuator/health/**", "/actuator/info")
 			.permitAll()
+			// Prometheus reads this without logging in. Production serves the actuator
+			// on a port that isn't published or proxied, so only the server's own
+			// containers reach it.
+			.requestMatchers("/actuator/prometheus")
+			.permitAll()
 			// The API description and Swagger UI: public, like the API's own docs would
 			// be.
 			.requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
