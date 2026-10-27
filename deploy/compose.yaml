@@ -137,7 +137,7 @@ services:
   # Monitoring. The web interfaces listen on the server's localhost only: they are
   # opened through an SSH tunnel (deploy/README.md), never from the internet.
   prometheus:
-    image: prom/prometheus:v3.15.0
+    image: prom/prometheus:v3.15.1
     restart: unless-stopped
     command:
       - --config.file=/etc/prometheus/prometheus.yml
