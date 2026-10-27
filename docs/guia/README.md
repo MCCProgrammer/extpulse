@@ -16,9 +16,9 @@ os problemas que apareceram e uma ficha por ferramenta. Atualiza-se no fim de ca
 | 5 | [Contas e login (Spring Security, JWT)](05-contas.md) | feito |
 | 6 | [Catálogo e estatísticas na API](06-catalogo-estatisticas.md) | feito |
 | 7 | [Avaliações](07-avaliacoes.md) | feito |
-| 8 | Alertas e resumo semanal | a seguir |
+| 8 | [Alertas (email e Discord) e resumo semanal](08-alertas.md) | feito |
 | 9 | Página pública e badge | por fazer |
-| 10 | Deploy | por fazer |
+| 10 | Deploy | a seguir |
 
 A ordem mudou no passo 5: as contas vieram antes das estatísticas, porque tudo em
 `/api` pertence a uma conta (ver o [capítulo 5](05-contas.md)).

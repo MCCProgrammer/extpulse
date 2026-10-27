@@ -3,7 +3,7 @@
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
 
-> **Status:** in development. Accounts, publishers, stats and a reviews inbox work through the REST API, and the daily collection runs on its own. Alerts are next.
+> **Status:** in development. Accounts, publishers, stats, a reviews inbox and alerts (email and Discord) work through the REST API, and the daily collection runs on its own. Deploy is next.
 
 ## Why
 
@@ -33,6 +33,7 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Build | Maven (through the Maven Wrapper, `./mvnw`) |
 | Store clients | Spring RestClient (JDK HttpClient), jsoup for the Chrome Web Store page |
 | Resilience | Resilience4j (retries with backoff, one request per second per store) |
+| Alerts | Spring Mail (Mailpit in development), Discord webhooks, an outbox table |
 | Tests | JUnit 6, Spring Boot Test, Testcontainers, WireMock; JaCoCo coverage gate in CI |
 | Local services | Docker Compose |
 | CI | GitHub Actions |
@@ -90,7 +91,14 @@ curl "localhost:8080/api/extensions/1/stats?from=2026-10-01&granularity=week" -H
 | GET | `/api/extensions/{id}/stats` | Installs over time: `from`, `to` (ISO dates), `granularity=day\|week` |
 | GET | `/api/reviews` | Reviews from every store, newest first: `unread`, `unanswered`, `maxRating`, `store`, `extensionId`, `limit`, `offset` |
 | PATCH | `/api/reviews/{id}` | Mark a review as read: `{"read": true}` |
+| GET, POST | `/api/alerts` | Your alerts; add one: `{"type": "LOW_RATING", "channel": "DISCORD", "target": "<webhook URL>"}` |
+| DELETE | `/api/alerts/{id}` | Remove an alert |
+| POST | `/api/alerts/{id}/test` | Send a test message to the alert's email or channel |
 | POST | `/api/admin/collect` | Run the collection now (admins) |
+
+Alert emails in development land in Mailpit, at <http://localhost:8025>. If PostgreSQL
+was already running when the app started, Spring Boot doesn't start the other services
+in `compose.yaml`; run `docker compose up -d` once.
 
 Errors come back as [Problem Details](https://www.rfc-editor.org/rfc/rfc9457) JSON.
 In production, set `EXTPULSE_AUTH_JWT_SECRET` (32+ bytes); without it, tokens stop
@@ -112,7 +120,7 @@ src/main/java/com/mccprogrammer/extpulse/
 src/main/resources/
 ├── application.yaml           configuration
 └── db/migration/              Flyway migrations (V1__..., V2__...)
-compose.yaml                   local PostgreSQL
+compose.yaml                   local PostgreSQL, and Mailpit for alert emails
 .github/workflows/ci.yml       build and tests on every push
 .github/workflows/live-stores.yml  weekly test against the real stores
 docs/decisions/                architecture decision records

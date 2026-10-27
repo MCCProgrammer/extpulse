@@ -16,6 +16,9 @@ import com.mccprogrammer.extpulse.store.Store;
 import com.mccprogrammer.extpulse.store.StoreException;
 import com.mccprogrammer.extpulse.store.StoreSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @Service
 public class CatalogService {
+
+	private static final Logger logger = LoggerFactory.getLogger(CatalogService.class);
 
 	private final PublisherRepository publishers;
 
@@ -62,6 +67,8 @@ public class CatalogService {
 				found.addAll(source.discover(name));
 			}
 			catch (StoreException ex) {
+				// The answer only says the store failed; the cause is for the log.
+				logger.warn("Looking up publisher {} on {} failed", name, source.store(), ex);
 				throw ApiProblem.of(HttpStatus.BAD_GATEWAY,
 						source.store() + " could not be read; nothing was added. Try again later.", ex);
 			}

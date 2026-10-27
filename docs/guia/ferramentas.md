@@ -61,6 +61,12 @@ Do mais antigo para o mais recente.
 | 2026-10-26 | 7 | `GET /api/reviews` (filtros, total, páginas) e `PATCH /api/reviews/{id}` | Ver o 1★ que interessa e marcar o que já foi visto |
 | 2026-10-26 | 7 | Autores anonimizados nas respostas gravadas para os testes | São dados públicos, mas não precisam de ficar no repositório |
 | 2026-10-26 | 7 | 17 testes novos (97 no total; 93,9% das linhas); recolha real trouxe o 1★ do Diff Checker com a tua resposta | — |
+| 2026-10-27 | 8 | Regras de alerta (5 tipos) com email e Discord; deteção em SQL; *outbox* com chave de deduplicação; entrega com retries ([0010](../decisions/0010-alerts.md)) | Cada alerta sai uma vez; um envio falhado volta a ser tentado |
+| 2026-10-27 | 8 | A recolha publica `CollectionFinished`; os alertas ouvem com `@EventListener` | A recolha não depende dos alertas (prepara o Kafka da v3) |
+| 2026-10-27 | 8 | Webhooks do Discord só para `discord.com`, sem menções, com o token escondido | SSRF, `@everyone` num texto de avaliação, um URL secreto |
+| 2026-10-27 | 8 | Mailpit no `compose.yaml`; GreenMail nos testes; email fora do `/actuator/health` | Ver os emails sem enviar nada; testar com SMTP real; um servidor de email em baixo não reinicia a app |
+| 2026-10-27 | 8 | A consulta do Marketplace repete-se uma vez quando a ligação cai | Explicou um teste intermitente: o Java repete `GET`s sozinho, mas não `POST`s |
+| 2026-10-27 | 8 | 21 testes novos (118 no total; 94,4% das linhas); alerta de teste chegou ao Mailpit com dados reais | — |
 
 ## Problemas que apareceram
 
@@ -76,6 +82,10 @@ Do mais antigo para o mais recente.
 | O PR #2 entrou no branch do passo 2 e não no `main` (passo 3) | O PR #2 tinha base em `feat/core-schema`. O GitHub só muda a base para `main` se o branch do PR anterior for apagado no merge, o que não está ligado neste repositório | PR #3 do `feat/store-adapters` para o `main`. Daqui em diante, todos os PRs com base no `main` | Um PR "empilhado" sobre outro é frágil. Com base no `main`, mostra os commits do anterior até esse ter merge, e mais nada |
 | `--extpulse.collection.cron=0 * * * * *` chegou à app como `"0"` (passo 4) | O `-Dspring-boot.run.arguments` do plugin do Maven parte os argumentos nos espaços | Passar por variável de ambiente: `EXTPULSE_COLLECTION_CRON='0 * * * * *'` | O Spring Boot lê variáveis de ambiente (`EXTPULSE_COLLECTION_CRON` = `extpulse.collection.cron`), e é assim que a produção recebe configuração |
 | `SchemaTests` falhou 8 vezes com `duplicate key users_email_lower_key` (passo 6) | Com um só PostgreSQL para todos os testes, encontrou contas gravadas por outras classes de teste | Cada teste apaga o que precisa antes de começar | Um teste não pode assumir uma base de dados vazia. Contentores separados escondiam isso |
+| `/actuator/health` a 503 nos testes depois de juntar o Spring Mail (passo 8) | O Boot junta sozinho o servidor de email ao health | `management.health.mail.enabled: false` | Uma dependência nova pode mudar o health. E um serviço que não é essencial não deve marcar a app como doente |
+| Um teste do catálogo falhou uma vez em cerca de 10 (passo 8) | O Java reutiliza ligações; se o servidor fechou uma, repete um `GET` sozinho, nunca um `POST`. O Marketplace usa `POST` | Uma repetição na consulta do Marketplace, com um teste que corta a ligação de propósito | Um teste intermitente é um bug à espera de ser percebido. O log (agora com a causa) e a diferença `GET`/`POST` explicaram-no |
+| Testes de email a falhar depois de reiniciar o GreenMail (passo 8) | Com porta dinâmica, o servidor voltava noutra porta | Uma porta livre escolhida uma vez | — |
+| O Mailpit não arrancou com a app (passo 8) | Com algum serviço do `compose.yaml` já a correr, o Spring Boot não arranca os outros | `docker compose up -d` | — |
 | O `filterOptions=1` da API de avaliações do Marketplace, previsto no plano, esconde as avaliações sem texto (passo 7) | É o filtro "sem avaliações vazias" da loja | Usar o filtro por omissão; um teste confirma que o parâmetro não vai | Ler a documentação (ou testar) cada parâmetro copiado. Um 1★ sem texto era o que mais importava |
 | Um redirecionamento a mais a partir de Portugal (passo 3) | A Google manda primeiro para o consentimento de cookies (`consent.google.com`) | O mesmo ciclo de redirecionamentos, até 5 saltos | O que um servidor responde pode depender do país de onde se pede |
 
@@ -110,6 +120,10 @@ Do mais antigo para o mais recente.
 | Problem Details (RFC 9457) | Spring 7.0 | Formato único das respostas de erro | passo 5 |
 | springdoc-openapi (Swagger) | 3.1.1 | Documentação da API gerada dos controllers | passo 6 |
 | JaCoCo | 0.8.15 | Cobertura de testes, com limite mínimo no build | depois do passo 6 |
+| Spring Mail, Mailpit, GreenMail | 4.1.1 / 1.31.5 / 2.1.14 | Enviar emails; vê-los em desenvolvimento; testá-los | passo 8 |
+| Webhooks do Discord | — | Alertas num canal do Discord | passo 8 |
+| Eventos do Spring (`@EventListener`) | 7.0 | A recolha avisa quem quiser ouvir que acabou | passo 8 |
+| Padrão *outbox* | — | Alertas escritos antes de enviados; uma vez cada um | passo 8 |
 | Funções de janela do PostgreSQL (`LAG`, `FILTER`, `LATERAL`) | 17 | Estatísticas calculadas na base de dados | passo 6 |
 | Git, GitHub e `gh` | — | Histórico do código e repositório remoto | passo 1 |
 | ADRs | — | Registar as decisões | passo 1 |
@@ -462,6 +476,50 @@ As versões das bibliotecas vêm do Spring Boot 4.1.1. Para as ver: `./mvnw depe
   serviço com menos é o `CatalogService` (85%). Com o limite dos serviços a 99%, o
   build falha com `Coverage checks have not been met`.
 
+### Spring Mail, Mailpit e GreenMail
+
+- **O que é:** o Spring Mail envia emails por SMTP (`JavaMailSender`). O Mailpit é uma
+  caixa de email falsa para desenvolvimento, com página web. O GreenMail é um servidor
+  SMTP que corre dentro dos testes.
+- **Porquê:** alertas e resumo semanal por email. Em desenvolvimento nada sai do
+  computador, e nos testes verifica-se o email que chegou de facto.
+- **Alternativa que ficou de fora:** um serviço com API (SendGrid, Mailgun) em vez de
+  SMTP (prende a um fornecedor); um `JavaMailSender` falso nos testes (não testa o envio real).
+- **Onde está:** `spring-boot-starter-mail`, `EmailAlertSender.java`, `spring.mail` no
+  `application.yaml`, o serviço `mailpit` no `compose.yaml`, e o GreenMail em
+  `AlertApiAndDeliveryTests`.
+- **Em que já ajudou:** o alerta de teste chegou ao Mailpit com os dados reais. Nos
+  testes, um servidor de email parado e depois ligado mostrou que o alerta sai na
+  tentativa seguinte.
+
+### Webhooks do Discord
+
+- **O que é:** um URL secreto de um canal. Um `POST` com `{"content": "..."}` escreve
+  uma mensagem no canal.
+- **Porquê:** muitos developers vivem no Discord, e é a forma mais simples de integrar
+  (sem bot e sem OAuth).
+- **Alternativa que ficou de fora:** um bot do Discord (mais poder, mais trabalho);
+  Slack (a mesma ideia, fica para depois).
+- **Onde está:** `DiscordAlertSender.java`; os prefixos permitidos em
+  `extpulse.alerts.discord-webhook-prefixes`.
+- **Em que já ajudou:** os testes provam que só aceita URLs do Discord (contra SSRF), que
+  manda `allowed_mentions: {parse: []}` (um `@everyone` numa avaliação não menciona
+  ninguém) e que o token não aparece na API.
+
+### Eventos do Spring e o padrão *outbox*
+
+- **O que é:** o `ApplicationEventPublisher.publishEvent(...)` avisa quem tiver um
+  `@EventListener` para esse tipo. O *outbox* é uma tabela onde se escreve o que é
+  preciso enviar, antes de o enviar.
+- **Porquê:** a recolha não precisa de conhecer os alertas. Um alerta nunca se perde
+  numa falha de envio, e nunca sai duas vezes, graças à chave única.
+- **Alternativa que ficou de fora:** Kafka ou RabbitMQ (para comunicar entre serviços;
+  dentro de uma app, o evento e a tabela chegam). O plano da v3 passa estes eventos para o Kafka.
+- **Onde está:** `CollectionFinished.java`, `AlertJobs.afterCollection`, `AlertOutbox.java`
+  e a tabela `alert_events`.
+- **Em que já ajudou:** o teste publica `CollectionFinished` duas vezes e o Discord
+  recebe **um** pedido.
+
 ### Git, GitHub e `gh`
 
 - **O que é:** o Git guarda o histórico. O GitHub guarda o repositório remoto. O `gh` é a
@@ -485,7 +543,6 @@ Do documento do projeto, por passo. Cada ferramenta ganha a sua ficha quando ent
 | Ferramenta | Para quê | Passo |
 | --- | --- | --- |
 | ShedLock | Só uma instância a recolher, quando houver mais do que um servidor | deploy |
-| Spring Mail | Alertas e resumo semanal por email | 8 |
 | Render ou Fly.io | Deploy da v1 | 10 |
 | AWS (ECR, ECS Fargate, RDS, SES) | Deploy da v2 | v2 |
 | Kafka, Redis, Prometheus + Grafana | v3 | v3 |
