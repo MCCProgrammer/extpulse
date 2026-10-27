@@ -5,7 +5,7 @@ services:
   postgres:
     # Pinned major version: "latest" could jump to a new major without warning.
     # Keep it in sync with TestcontainersConfiguration.
-    image: 'postgres:17'
+    image: 'postgres:18'
     environment:
       POSTGRES_DB: extpulse
       POSTGRES_USER: extpulse
