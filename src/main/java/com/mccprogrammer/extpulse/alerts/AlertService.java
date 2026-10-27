@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import com.mccprogrammer.extpulse.ApiProblem;
 import com.mccprogrammer.extpulse.alerts.AlertDetector.Detection;
@@ -34,6 +35,13 @@ class AlertService {
 	// Looking back further than one collection makes up for a check that didn't run; the
 	// outbox ignores what was already found.
 	private static final Duration REVIEW_WINDOW = Duration.ofDays(2);
+
+	// Possessive quantifiers and dot-free domain labels: no backtracking, so a long
+	// crafted
+	// string can't make matching slow (ReDoS).
+	private static final Pattern EMAIL = Pattern.compile("[^@\\s]++@[^@\\s.]++(?:\\.[^@\\s.]++)++");
+
+	private static final int MAX_EMAIL_LENGTH = 254;
 
 	private final AlertRuleRepository rules;
 
@@ -159,7 +167,7 @@ class AlertService {
 						.query(String.class)
 						.single();
 				}
-				if (!target.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+") || target.length() > 254) {
+				if (target.length() > MAX_EMAIL_LENGTH || !EMAIL.matcher(target.strip()).matches()) {
 					throw ApiProblem.of(HttpStatus.BAD_REQUEST, "target must be an email address");
 				}
 				yield target.strip();

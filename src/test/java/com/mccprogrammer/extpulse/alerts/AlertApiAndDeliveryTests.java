@@ -136,6 +136,20 @@ class AlertApiAndDeliveryTests {
 	}
 
 	@Test
+	void anEmailTargetMustBeAnEmailAndIsCheckedQuickly() throws Exception {
+		for (String target : new String[] { "not-an-email", "a@b", "two@@example.com", "spaces in@example.com" }) {
+			addRule("{\"type\": \"LOW_RATING\", \"channel\": \"EMAIL\", \"target\": \"%s\"}".formatted(target))
+				.andExpect(status().isBadRequest());
+		}
+		// Built to make a backtracking pattern slow: many dots and no valid ending.
+		String crafted = "a@" + "a.".repeat(120) + "@";
+		long start = System.nanoTime();
+		addRule("{\"type\": \"LOW_RATING\", \"channel\": \"EMAIL\", \"target\": \"%s\"}".formatted(crafted))
+			.andExpect(status().isBadRequest());
+		assertThat(java.time.Duration.ofNanos(System.nanoTime() - start)).isLessThan(java.time.Duration.ofSeconds(1));
+	}
+
+	@Test
 	void onlyTheOwnerCanDeleteOrTestARule() throws Exception {
 		long rule = ruleId(addRule("{\"type\": \"LOW_RATING\", \"channel\": \"EMAIL\"}"));
 		String other = TestAccounts.tokenFor(this.mvc, "someone@example.com");

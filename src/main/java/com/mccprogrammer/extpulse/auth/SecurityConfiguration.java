@@ -40,6 +40,8 @@ class SecurityConfiguration {
 
 	private static final int MIN_SECRET_BYTES = 32;
 
+	private static final SecureRandom RANDOM = new SecureRandom();
+
 	private static final Logger logger = LoggerFactory.getLogger(SecurityConfiguration.class);
 
 	@Bean
@@ -79,7 +81,7 @@ class SecurityConfiguration {
 			logger.warn("extpulse.auth.jwt-secret is not set: using a random key, so login tokens stop working "
 					+ "when the app restarts. Set EXTPULSE_AUTH_JWT_SECRET in production.");
 			byte[] random = new byte[MIN_SECRET_BYTES];
-			new SecureRandom().nextBytes(random);
+			RANDOM.nextBytes(random);
 			return new SecretKeySpec(random, "HmacSHA256");
 		}
 		byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
