@@ -10,5 +10,6 @@ docs
 .env
 .DS_Store
 compose.yaml
+infra
 Dockerfile
 .dockerignore

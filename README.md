@@ -40,6 +40,7 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Tests | JUnit 6, Spring Boot Test, Testcontainers, WireMock; JaCoCo coverage gate in CI |
 | Container | Multi-stage Docker image (Temurin 25 JRE, layered, non-root, arm64), published to GitHub Container Registry |
 | Local services | Docker Compose |
+| Infrastructure | Terraform: Oracle Cloud Always Free (network, firewall, an Arm VM with cloud-init, a budget alert) |
 | CI | GitHub Actions: build and tests, coverage gate, Arm image, secret scan (gitleaks) |
 | Code quality | Spring Java Format (checked in the build), CodeQL, SonarQube Cloud, Dependabot |
 
@@ -146,6 +147,7 @@ src/main/resources/
 compose.yaml                   local PostgreSQL, and Mailpit for alert emails
 .github/workflows/ci.yml       build and tests on every push
 .github/workflows/live-stores.yml  weekly test against the real stores
+infra/oracle/                  Terraform for the server (Oracle Cloud Always Free)
 docs/decisions/                architecture decision records
 ```
 

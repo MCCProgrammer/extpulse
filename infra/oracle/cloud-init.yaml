@@ -1,0 +1,37 @@
+#cloud-config
+# First boot of the server: Docker, a deploy user, a hardened SSH and the host
+# firewall opened for the web. Runs once; after that, CI deploys with SSH and
+# Docker Compose.
+
+package_update: true
+package_upgrade: true
+packages:
+  - docker.io
+  - docker-compose-v2
+  - fail2ban # bans IPs that keep failing SSH logins
+  - unattended-upgrades # security updates, applied automatically
+
+users:
+  - default # ubuntu, with the admin key from the instance metadata
+  - name: deploy
+    shell: /bin/bash
+    groups: [docker]
+    ssh_authorized_keys:
+      - ${deploy_ssh_public_key}
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/10-extpulse.conf
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+
+runcmd:
+  # Oracle's Ubuntu images reject everything but SSH in iptables, on top of the
+  # security list. Let the web in, before the final REJECT rule, and keep it on reboot.
+  - iptables -I INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -j ACCEPT
+  - iptables -I INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j ACCEPT
+  - netfilter-persistent save
+  - systemctl reload ssh
+  - systemctl enable --now docker fail2ban
+  - install -d -o deploy -g deploy -m 750 /opt/extpulse

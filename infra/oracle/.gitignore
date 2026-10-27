@@ -1,0 +1,6 @@
+# Provider binaries, local state (it describes the live server) and the real values.
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+tfplan

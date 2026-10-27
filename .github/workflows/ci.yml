@@ -83,6 +83,20 @@ jobs:
           tar -xzf gitleaks.tar.gz gitleaks
           ./gitleaks git . --redact --no-banner --exit-code 1
 
+  terraform:
+    # The Oracle Cloud infrastructure (infra/oracle): formatted and valid. Planning and
+    # applying need the account's API key and run from the maintainer's machine.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Format and validate
+        working-directory: infra/oracle
+        run: |
+          docker run --rm -v "$PWD":/work -w /work hashicorp/terraform:1.16.5 fmt -check -diff
+          docker run --rm -v "$PWD":/work -w /work hashicorp/terraform:1.16.5 init -backend=false -input=false
+          docker run --rm -v "$PWD":/work -w /work hashicorp/terraform:1.16.5 validate
+
   image:
     # The production image. Built on an Arm runner, natively, because the server
     # (Oracle Cloud Ampere A1) is Arm. Pull requests build it to check the Dockerfile;

@@ -18,3 +18,4 @@ changes gets a new record that replaces the old one.
 | [0010](0010-alerts.md) | Alerts through an outbox, by email and Discord |
 | [0011](0011-container-image.md) | The container image: multi-stage, layered, Arm, on GHCR |
 | [0012](0012-quality-gates.md) | Quality gates: formatting, static analysis, secrets and dependencies |
+| [0013](0013-oracle-cloud-terraform.md) | Infrastructure on Oracle Cloud Always Free, with Terraform |
