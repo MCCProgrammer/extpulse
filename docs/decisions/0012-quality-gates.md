@@ -5,7 +5,7 @@
 ## Context
 
 The repository is public and changes land through pull requests checked by CI. Tests
-and the coverage gate (ADR 0006's tests, JaCoCo) say the code works; they don't say it
+and the coverage gate (JaCoCo) say the code works; they don't say it
 is consistently formatted, free of known security patterns, free of committed secrets,
 or on dependencies without known vulnerabilities. Every tool here is free for public
 repositories.
