@@ -1,0 +1,14 @@
+# Only what the image build needs reaches Docker: the build is faster and nothing
+# local (build output, IDE files, a .env with secrets) ends up in an image layer.
+.git
+.github
+.idea
+.vscode
+target
+docs
+*.md
+.env
+.DS_Store
+compose.yaml
+Dockerfile
+.dockerignore

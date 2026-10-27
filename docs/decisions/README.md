@@ -16,3 +16,4 @@ changes gets a new record that replaces the old one.
 | [0008](0008-catalog-and-stats.md) | The catalog API and how stats are computed |
 | [0009](0009-reviews.md) | Reviews: one inbox for every store |
 | [0010](0010-alerts.md) | Alerts through an outbox, by email and Discord |
+| [0011](0011-container-image.md) | The container image: multi-stage, layered, Arm, on GHCR |

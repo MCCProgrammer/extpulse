@@ -1,5 +1,7 @@
 # ExtPulse
 
+[![CI](https://github.com/MCCProgrammer/extpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/MCCProgrammer/extpulse/actions/workflows/ci.yml)
+
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
 
@@ -35,6 +37,7 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Resilience | Resilience4j (retries with backoff, one request per second per store) |
 | Alerts | Spring Mail (Mailpit in development), Discord webhooks, an outbox table |
 | Tests | JUnit 6, Spring Boot Test, Testcontainers, WireMock; JaCoCo coverage gate in CI |
+| Container | Multi-stage Docker image (Temurin 25 JRE, layered, non-root, arm64), published to GitHub Container Registry |
 | Local services | Docker Compose |
 | CI | GitHub Actions |
 
@@ -57,6 +60,21 @@ curl http://localhost:8080/actuator/health   # {"status":"UP"}
 # Only the tests against the real stores (left out of the normal build)
 ./mvnw test -Dgroups=live -DexcludedGroups=
 ```
+
+### Run the production image
+
+```bash
+docker build -t extpulse .
+docker run -p 8080:8080 \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5433/extpulse \
+  -e SPRING_DATASOURCE_USERNAME=extpulse -e SPRING_DATASOURCE_PASSWORD=extpulse \
+  -e EXTPULSE_AUTH_JWT_SECRET="$(openssl rand -base64 48)" \
+  extpulse
+```
+
+CI publishes every build of `main` as `ghcr.io/mccprogrammer/extpulse:latest` and
+`:sha-<commit>`. All configuration comes from environment variables; nothing secret is
+in the image.
 
 ### Try the API
 
