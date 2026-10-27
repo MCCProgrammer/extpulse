@@ -23,6 +23,7 @@ class StatsChartsTests {
 		assertThat(Scale.niceStep(25)).isEqualTo(50);
 		assertThat(Scale.niceStep(120)).isEqualTo(200);
 		assertThat(Scale.niceStep(1000)).isEqualTo(1000);
+		assertThat(Scale.niceStep(7_000_000)).isEqualTo(10_000_000);
 
 		// A range of 456 in about 4 steps: steps of 200, from below the lowest value to
 		// above the highest.

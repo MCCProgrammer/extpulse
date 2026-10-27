@@ -164,16 +164,16 @@ final class StatsCharts {
 
 		/** 1, 2 or 5 times a power of ten: ticks people read at a glance. */
 		static long niceStep(double rough) {
-			long power = 1;
-			while (power * 10 <= rough) {
-				power *= 10;
+			if (rough <= 1) {
+				return 1;
 			}
-			for (long multiple : new long[] { 1, 2, 5, 10 }) {
+			double power = Math.pow(10, Math.floor(Math.log10(rough)));
+			for (int multiple : new int[] { 1, 2, 5 }) {
 				if (power * multiple >= rough) {
-					return power * multiple;
+					return Math.round(power * multiple);
 				}
 			}
-			return power * 10;
+			return Math.round(power * 10);
 		}
 
 		double y(long value) {
