@@ -1,0 +1,11 @@
+# Dashboards come from the JSON files in /var/lib/grafana/dashboards (deploy/grafana/
+# dashboards in the repository): changed in Git, not by hand in Grafana.
+apiVersion: 1
+providers:
+  - name: extpulse
+    folder: ExtPulse
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards

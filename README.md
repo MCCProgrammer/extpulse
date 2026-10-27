@@ -43,6 +43,7 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Local services | Docker Compose |
 | Infrastructure | Terraform: Oracle Cloud Always Free (network, firewall, an Arm VM with cloud-init, a budget alert) |
 | Production | Docker Compose on the VM, Caddy (automatic HTTPS, Let's Encrypt), daily `pg_dump` backups |
+| Observability | JSON logs (ECS), Micrometer metrics with Prometheus, Grafana dashboard, Alertmanager alerts to Discord |
 | CI/CD | GitHub Actions: build and tests, coverage gate, Arm image, secret scan (gitleaks), deploy over SSH with health check and rollback |
 | Code quality | Spring Java Format (checked in the build), CodeQL, SonarQube Cloud, Dependabot |
 

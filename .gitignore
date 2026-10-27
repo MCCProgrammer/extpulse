@@ -37,3 +37,6 @@ build/
 
 ### Local secrets ###
 .env
+
+# The Discord webhook for Alertmanager: a secret that exists only on the server.
+deploy/alertmanager/discord-webhook

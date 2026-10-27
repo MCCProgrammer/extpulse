@@ -28,8 +28,9 @@ updates:
       interval: weekly
       day: monday
 
+  # Development's compose.yaml and production's deploy/compose.yaml.
   - package-ecosystem: docker-compose
-    directory: /
+    directories: [/, /deploy]
     schedule:
       interval: weekly
       day: monday

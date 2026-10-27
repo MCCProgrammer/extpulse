@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.mccprogrammer.extpulse.TestcontainersConfiguration;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +60,7 @@ class AlertDetectionTests {
 		this.jdbc.sql("DELETE FROM users").update();
 		this.jdbc.sql("DELETE FROM collection_runs").update();
 		this.alerts = new AlertService(this.rules, this.detector, this.outbox, List.of(), this.discord, this.properties,
-				this.jdbc, Clock.fixed(NOW, ZoneId.of("Europe/Lisbon")));
+				this.jdbc, Clock.fixed(NOW, ZoneId.of("Europe/Lisbon")), new SimpleMeterRegistry());
 		this.user = id("INSERT INTO users (email, password_hash) VALUES ('miguel@example.com', 'x') RETURNING id");
 		long publisher = id("INSERT INTO publishers (user_id, name) VALUES (%d, 'MCCProgrammer') RETURNING id"
 			.formatted(this.user));

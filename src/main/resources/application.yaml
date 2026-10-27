@@ -94,5 +94,12 @@ management:
   endpoints:
     web:
       exposure:
-        # Only what is safe to show publicly; more after Spring Security is added.
-        include: health,info
+        # prometheus: the metrics Prometheus reads. Production serves the actuator on its
+        # own port (MANAGEMENT_SERVER_PORT=8081), which only the containers next to the
+        # app can reach; the public port then has no /actuator at all.
+        include: health,info,prometheus
+  metrics:
+    distribution:
+      # Latency buckets for HTTP requests, so Prometheus can compute percentiles (p95).
+      percentiles-histogram:
+        http.server.requests: true

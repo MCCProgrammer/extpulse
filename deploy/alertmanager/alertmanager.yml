@@ -1,0 +1,15 @@
+# Where Prometheus' alerts go: a Discord channel. The webhook URL is a secret, so it is
+# read from a file that exists only on the server (alertmanager/discord-webhook).
+route:
+  receiver: discord
+  group_by: [alertname]
+  group_wait: 30s
+  group_interval: 5m
+  # An alert that stays on is repeated twice a day, not every few minutes.
+  repeat_interval: 12h
+
+receivers:
+  - name: discord
+    discord_configs:
+      - webhook_url_file: /etc/alertmanager/discord-webhook
+        send_resolved: true

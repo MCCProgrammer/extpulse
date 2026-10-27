@@ -1,0 +1,51 @@
+# Alerts about ExtPulse itself (not about the extensions it tracks: those are the app's
+# own alerts). Alertmanager sends them to Discord.
+groups:
+  - name: extpulse
+    rules:
+      - alert: ExtPulseDown
+        expr: up{job="extpulse"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: ExtPulse has not answered Prometheus for 5 minutes.
+
+      # The collection runs at 06:00 every day; 26 hours leaves room for a slow run.
+      - alert: CollectionLate
+        expr: time() - extpulse_collection_last_success_seconds > 26 * 3600
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: No collection has worked for more than 26 hours.
+
+      - alert: ListingsFailing
+        expr: sum by (store) (increase(extpulse_collection_listings_total{outcome="failed"}[1h])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: '{{ $labels.store }}: listings failed in the last collection.'
+
+      - alert: AlertDeliveryFailing
+        expr: sum by (channel) (increase(extpulse_alerts_delivered_total{outcome="failed"}[1h])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: '{{ $labels.channel }} alerts could not be sent in the last hour.'
+
+      - alert: ServerErrors
+        expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: ExtPulse has been answering with server errors (5xx) for 10 minutes.
+
+      - alert: HeapAlmostFull
+        expr: sum(jvm_memory_used_bytes{area="heap"}) / sum(jvm_memory_max_bytes{area="heap"}) > 0.9
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: The JVM heap has been over 90% for 15 minutes.

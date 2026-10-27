@@ -9,12 +9,16 @@ this way: [ADR 0014](../docs/decisions/0014-deploy-and-operations.md).
 | `Caddyfile` | HTTPS for the domain, security headers, proxy to the app |
 | `deploy.sh` | Starts one image tag, waits for it to be healthy, rolls back if not |
 | `backup.sh` | `pg_dump` every day at 03:00 UTC, keeping 14 days |
+| `prometheus/` | What Prometheus reads (the app's metrics) and the alert rules |
+| `alertmanager/` | Where alerts go: a Discord channel |
+| `grafana/` | Grafana's data source and the ExtPulse dashboard |
 
 On the server only, never in the repository:
 
 | File | What it holds |
 | --- | --- |
-| `.env` | `POSTGRES_PASSWORD` and `EXTPULSE_AUTH_JWT_SECRET`, created by the first deploy; `EXTPULSE_AUTH_REGISTRATION_ALLOW_LIST`, added by hand |
+| `.env` | `POSTGRES_PASSWORD`, `EXTPULSE_AUTH_JWT_SECRET` and `GRAFANA_ADMIN_PASSWORD`, created by deploys; `EXTPULSE_AUTH_REGISTRATION_ALLOW_LIST`, added by hand |
+| `alertmanager/discord-webhook` | The Discord webhook URL for monitoring alerts; empty until set |
 | `app.env` | Optional settings, such as the SMTP provider (`SPRING_MAIL_*`) |
 | `.deployed-tag` | The tag running now |
 | `backups/` | The dumps |
@@ -34,6 +38,13 @@ On the server only, never in the repository:
    ./deploy.sh "$(cat .deployed-tag)"
    ```
 
+5. Send monitoring alerts to Discord: in the channel's settings, Integrations →
+   Webhooks → New webhook, copy its URL, then on the server:
+   ```sh
+   printf '%s\n' 'https://discord.com/api/webhooks/...' > alertmanager/discord-webhook
+   docker compose restart alertmanager
+   ```
+
 ## Everyday
 
 All from `/opt/extpulse`, as `deploy`. Compose needs the tag, so set it first:
@@ -49,6 +60,38 @@ Deploy or roll back to any published tag by hand (the last week's images are kep
 ```sh
 ./deploy.sh sha-1a2b3c4
 ```
+
+Logs are JSON, one object per line; `jq` makes them readable and filterable:
+
+```sh
+docker compose logs --no-log-prefix app | grep '^{' | jq -r '"\(.["@timestamp"]) \(.log.level) \(.message)"'
+docker compose logs --no-log-prefix app | grep '^{' | jq 'select(.log.level == "WARN")'
+```
+
+## Monitoring
+
+Prometheus, Alertmanager and Grafana listen on the server's localhost only. Open them
+through an SSH tunnel from your machine:
+
+```sh
+ssh -i ~/.ssh/extpulse_admin -N -L 3000:localhost:3000 -L 9090:localhost:9090 -L 9093:localhost:9093 ubuntu@<ip>
+```
+
+Then <http://localhost:3000> is Grafana (user `admin`, the password is
+`GRAFANA_ADMIN_PASSWORD` in `.env`), <http://localhost:9090> Prometheus (targets, alert
+rules) and <http://localhost:9093> Alertmanager (alerts firing, silences).
+
+| Alert | When |
+| --- | --- |
+| ExtPulseDown | Prometheus can't read the app for 5 minutes |
+| CollectionLate | No collection has worked for 26 hours |
+| ListingsFailing | A store's listings failed in the last collection |
+| AlertDeliveryFailing | The app's own alerts (email, Discord) couldn't be sent |
+| ServerErrors | Server errors (5xx) for 10 minutes |
+| HeapAlmostFull | The JVM heap over 90% for 15 minutes |
+
+The dashboard is `grafana/dashboards/extpulse.json`: change it there, not in Grafana
+(it is read-only in Grafana and comes back from the file).
 
 ## Backups
 

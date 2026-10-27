@@ -1,0 +1,19 @@
+# Prometheus reads the app's metrics every 30 s and checks the alert rules.
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+scrape_configs:
+  # The actuator's own port (8081), reachable only inside this Compose network.
+  - job_name: extpulse
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['app:8081']
