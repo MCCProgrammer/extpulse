@@ -1,5 +1,7 @@
 # Weekly pull requests for outdated dependencies, grouped so a week brings a few PRs,
 # not one per library. CI runs on each, so an update that breaks a test is visible.
+# A release is only proposed once it is 5 days old (cooldown): a broken release is
+# usually fixed or pulled by then. Security updates don't wait.
 version: 2
 updates:
   - package-ecosystem: maven
@@ -7,6 +9,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 5
     groups:
       minor-and-patch:
         update-types: [minor, patch]
@@ -17,6 +21,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 5
     groups:
       actions:
         patterns: ['*']
@@ -27,6 +33,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 5
 
   # Development's compose.yaml and production's deploy/compose.yaml.
   - package-ecosystem: docker-compose
@@ -34,6 +42,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 5
     ignore:
       # A new PostgreSQL major needs its data migrated (pg_upgrade) and the same version
       # in TestcontainersConfiguration: a planned change, not a weekly update.
