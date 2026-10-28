@@ -106,3 +106,9 @@ management:
       # Latency buckets for HTTP requests, so Prometheus can compute percentiles (p95).
       percentiles-histogram:
         http.server.requests: true
+
+springdoc:
+  swagger-ui:
+    # The Swagger UI files to serve: the version pom.xml pins (swagger-ui.version), filled
+    # in by the build. springdoc otherwise looks for the one it was built with.
+    version: "@swagger-ui.version@"

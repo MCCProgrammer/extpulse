@@ -1,0 +1,34 @@
+name: ZAP baseline
+
+# A passive scan of the live site once a week with OWASP ZAP: its spider walks the
+# public pages and checks the answers (headers, cookies, known-vulnerable scripts). It
+# only reads what any visitor gets; nothing is attacked. Rules marked FAIL in
+# .zap/rules.tsv fail the run; the full report is the run's artifact.
+on:
+  schedule:
+    - cron: '0 7 * * 4' # Thursdays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Scan https://extpulse.mccprogrammer.com
+        run: |
+          mkdir -p zap && cp .zap/rules.tsv zap/ && chmod -R a+rwX zap
+          # -I: warnings don't fail the run, only the rules marked FAIL.
+          docker run --rm -v "$PWD/zap":/zap/wrk:rw ghcr.io/zaproxy/zaproxy:2.17.0 \
+            zap-baseline.py -t https://extpulse.mccprogrammer.com -m 2 -c rules.tsv -I \
+            -r report.html -J report.json
+
+      - name: Report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: zap-report
+          path: zap/report.*
