@@ -23,3 +23,4 @@ changes gets a new record that replaces the old one.
 | [0015](0015-website.md) | The website: Thymeleaf pages in the same app, signed in with a session |
 | [0016](0016-observability.md) | Observability: JSON logs, Prometheus, Grafana and Alertmanager on the server |
 | [0017](0017-offsite-backups.md) | Backups off the server: Object Storage, write-only for the server |
+| [0018](0018-always-free-quotas.md) | Quotas: the account only creates what Always Free covers |
