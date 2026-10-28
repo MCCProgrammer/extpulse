@@ -3,6 +3,7 @@ package com.mccprogrammer.extpulse.auth;
 import com.mccprogrammer.extpulse.TestAccounts;
 import com.mccprogrammer.extpulse.TestcontainersConfiguration;
 import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,8 +15,10 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -44,6 +47,82 @@ class WebsiteSecurityTests {
 	@BeforeEach
 	void deleteAccounts() {
 		this.jdbc.sql("DELETE FROM users").update();
+		this.jdbc.sql("DELETE FROM persistent_logins").update();
+	}
+
+	@Test
+	void keepMeSignedInRemembersTheBrowserUntilSigningOut() throws Exception {
+		Cookie remembered = signInRemembered("miguel@example.com");
+		assertThat(remembered.getMaxAge()).isEqualTo(30 * 24 * 3600);
+		assertThat(remembered.isHttpOnly()).isTrue();
+
+		// A new visit with no session, only the cookie: signed in, and given a new token.
+		MvcResult visit = this.mvc.perform(get("/app").cookie(remembered)).andExpect(status().isOk()).andReturn();
+		Cookie renewed = visit.getResponse().getCookie("remember-me");
+		assertThat(renewed.getValue()).isNotEqualTo(remembered.getValue());
+		MockHttpSession session = (MockHttpSession) visit.getRequest().getSession(false);
+
+		MvcResult signOut = this.mvc.perform(post("/logout").session(session).cookie(renewed).with(csrf()))
+			.andExpect(redirectedUrl("/login?signedOut"))
+			.andReturn();
+		assertThat(signOut.getResponse().getCookie("remember-me").getMaxAge()).isZero();
+		assertThat(rememberedLogins()).isZero();
+		this.mvc.perform(get("/app").cookie(renewed)).andExpect(status().isFound()).andExpect(redirectedUrl("/login"));
+	}
+
+	@Test
+	void aRememberedCookieUsedAgainAfterItsRenewalEndsTheRememberedLogin() throws Exception {
+		Cookie stolen = signInRemembered("miguel@example.com");
+		Cookie renewed = this.mvc.perform(get("/app").cookie(stolen))
+			.andReturn()
+			.getResponse()
+			.getCookie("remember-me");
+
+		// The old token again: someone else has a copy, so neither works any more.
+		this.mvc.perform(get("/app").cookie(stolen)).andExpect(status().isFound());
+		this.mvc.perform(get("/app").cookie(renewed)).andExpect(status().isFound());
+		assertThat(rememberedLogins()).isZero();
+	}
+
+	@Test
+	void withoutTheBoxTheBrowserIsNotRemembered() throws Exception {
+		TestAccounts.tokenFor(this.mvc, "miguel@example.com");
+		MvcResult signIn = this.mvc
+			.perform(post("/login").param("email", "miguel@example.com")
+				.param("password", TestAccounts.PASSWORD)
+				.with(csrf()))
+			.andExpect(redirectedUrl("/app"))
+			.andReturn();
+
+		assertThat(signIn.getResponse().getCookie("remember-me")).isNull();
+		assertThat(rememberedLogins()).isZero();
+	}
+
+	@Test
+	void theSignInPageOffersToKeepTheBrowserSignedIn() throws Exception {
+		this.mvc.perform(get("/login"))
+			.andExpect(content().string(containsString("name=\"remember-me\"")))
+			.andExpect(content().string(containsString("Keep me signed in")));
+	}
+
+	private Cookie signInRemembered(String email) throws Exception {
+		TestAccounts.tokenFor(this.mvc, email);
+		Cookie cookie = this.mvc
+			.perform(post("/login").param("email", email)
+				.param("password", TestAccounts.PASSWORD)
+				.param("remember-me", "on")
+				.with(csrf()))
+			.andExpect(redirectedUrl("/app"))
+			.andReturn()
+			.getResponse()
+			.getCookie("remember-me");
+		assertThat(cookie).isNotNull();
+		assertThat(rememberedLogins()).isEqualTo(1);
+		return cookie;
+	}
+
+	private long rememberedLogins() {
+		return this.jdbc.sql("SELECT count(*) FROM persistent_logins").query(Long.class).single();
 	}
 
 	@Test

@@ -30,12 +30,18 @@ stats and reviews and to manage alerts without crafting requests.
   email stay private. Badges are SVG, cached for an hour.
 - **Errors as pages:** the Problem Details handler now applies only to REST
   controllers; pages get `error.html`.
+- **"Keep me signed in"** (added 2026-10-28): a box on the sign-in form keeps the
+  browser signed in for 30 days with Spring Security's persistent remember-me tokens
+  (`persistent_logins`, V7). Each use replaces the token; an old token coming back
+  means a copy exists, so every remembered login of the account ends and the visit
+  carries on signed out (`RememberedLogins`). Signing out deletes them.
 
 ## Consequences
 
 - One deployable for API and website; a change to both ships in one PR.
-- Sessions live in memory: a deploy signs everyone out. Fine for one owner; Spring
-  Session (JDBC) would keep them across restarts.
+- Sessions live in memory: a deploy signs everyone out, except browsers that ticked
+  "Keep me signed in", which sign back in on their next visit. Spring Session (JDBC)
+  would keep every session across restarts.
 - Pages are tested with MockMvc like the API, including CSRF and redirects.
 
 ## Alternatives considered
