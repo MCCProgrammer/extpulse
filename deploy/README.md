@@ -1,7 +1,6 @@
 # Production
 
-What runs on the server, in `/opt/extpulse`, and how to operate it. Why it is built
-this way: [ADR 0014](../docs/decisions/0014-deploy-and-operations.md).
+What runs on the server, in `/opt/extpulse`, and how to operate it.
 
 | File | What it does |
 | --- | --- |
@@ -154,7 +153,7 @@ To look inside a dump without touching production, restore it into another datab
 ### Copies off the server
 
 Every dump also goes to the bucket `extpulse-backups` in Object Storage, kept 30 days
-([ADR 0017](../docs/decisions/0017-offsite-backups.md)). The server can add and read them,
+(`infra/oracle/backups.tf`). The server can add and read them,
 not replace or delete them. A copy now, and the list in the bucket:
 
 ```sh

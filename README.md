@@ -100,8 +100,6 @@ flowchart BT
 - **Observability:** JSON logs with the collection run ID, Micrometer metrics with
   Prometheus, a Grafana dashboard kept as code, and alert rules with unit tests,
   delivered to Discord.
-- **Decisions written down:** [20 architecture decision records](docs/decisions), from
-  the Java version to the trusted certificate authorities.
 
 ## Tech stack
 
@@ -125,8 +123,6 @@ flowchart BT
 | Observability | JSON logs (ECS), Micrometer metrics with Prometheus, Grafana dashboard, Alertmanager alerts to Discord, Pushgateway for the nightly backup jobs, alert rules unit-tested with promtool |
 | CI/CD | GitHub Actions: build and tests, coverage gate, Arm image, secret scan (gitleaks), image scan (Trivy) with an SBOM and provenance attestation, deploy over SSH with health check and rollback |
 | Code quality | Spring Java Format (checked in the build), CodeQL, SonarQube Cloud, Dependabot, a weekly OWASP ZAP baseline scan of the live site |
-
-Why each choice was made: [docs/decisions](docs/decisions).
 
 ## Getting started
 
@@ -240,7 +236,6 @@ compose.yaml                   local PostgreSQL, and Mailpit for alert emails
 .github/workflows/live-stores.yml  weekly test against the real stores
 infra/oracle/                  Terraform for the server (Oracle Cloud Always Free)
 deploy/                        what runs on the server, and how to operate it
-docs/decisions/                architecture decision records
 ```
 
 Each package has a `package-info.java` saying what belongs there.
