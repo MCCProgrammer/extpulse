@@ -2,9 +2,12 @@ package com.mccprogrammer.extpulse.auth;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.util.HexFormat;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import javax.sql.DataSource;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.slf4j.Logger;
@@ -27,6 +30,7 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.header.writers.ContentSecurityPolicyHeaderWriter;
 import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
@@ -57,6 +61,13 @@ class SecurityConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(SecurityConfiguration.class);
 
+	// "Keep me signed in": how long a browser stays signed in without the password.
+	private static final Duration REMEMBER_ME = Duration.ofDays(30);
+
+	// Only ties the remember-me filter to its authentication provider in this process;
+	// the tokens themselves are random and stored, so a new key at each start is fine.
+	private static final String REMEMBER_ME_KEY = randomHex(16);
+
 	// Only this site's own files: no inline scripts or styles, no other origins, and no
 	// framing. Swagger UI is left out, since it builds its page with inline code.
 	private static final String CONTENT_SECURITY_POLICY = "default-src 'self'; img-src 'self' data:; "
@@ -84,7 +95,8 @@ class SecurityConfiguration {
 
 	@Bean
 	@Order(2)
-	SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain webSecurityFilterChain(HttpSecurity http, RememberedLogins rememberMeServices)
+			throws Exception {
 		RequestMatcher swaggerUi = PathPatternRequestMatcher.withDefaults().matcher("/swagger-ui/**");
 		http.authorizeHttpRequests((requests) -> requests
 			.requestMatchers("/", "/login", "/register", "/p/**", "/css/**", "/favicon.svg", "/error")
@@ -105,11 +117,33 @@ class SecurityConfiguration {
 			.anyRequest()
 			.authenticated())
 			.formLogin((form) -> form.loginPage("/login").usernameParameter("email").defaultSuccessUrl("/app"))
+			// The box on the sign-in form ("remember-me"). Persistent tokens rather than
+			// a
+			// cookie signed with the password hash: each use replaces the token, a stolen
+			// one used after the real one ends every remembered login of the account, and
+			// signing out deletes them. The cookie is Secure over HTTPS.
+			.rememberMe((rememberMe) -> rememberMe.rememberMeServices(rememberMeServices).key(REMEMBER_ME_KEY))
 			.logout((logout) -> logout.logoutSuccessUrl("/login?signedOut"))
 			.headers((headers) -> headers
 				.addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(new NegatedRequestMatcher(swaggerUi),
 						new ContentSecurityPolicyHeaderWriter(CONTENT_SECURITY_POLICY))));
 		return http.build();
+	}
+
+	private static String randomHex(int bytes) {
+		byte[] random = new byte[bytes];
+		RANDOM.nextBytes(random);
+		return HexFormat.of().formatHex(random);
+	}
+
+	/** The remembered logins, in persistent_logins (V7). */
+	@Bean
+	RememberedLogins rememberMeServices(DataSource dataSource, AccountDetailsService accounts) {
+		JdbcTokenRepositoryImpl tokens = new JdbcTokenRepositoryImpl();
+		tokens.setDataSource(dataSource);
+		RememberedLogins services = new RememberedLogins(REMEMBER_ME_KEY, accounts, tokens);
+		services.setTokenValiditySeconds((int) REMEMBER_ME.toSeconds());
+		return services;
 	}
 
 	/** BCrypt today; the "{bcrypt}" prefix lets a future algorithm read old hashes. */
