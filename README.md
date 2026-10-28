@@ -2,11 +2,14 @@
 
 [![CI](https://github.com/MCCProgrammer/extpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/MCCProgrammer/extpulse/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/MCCProgrammer/extpulse/actions/workflows/codeql.yml/badge.svg)](https://github.com/MCCProgrammer/extpulse/actions/workflows/codeql.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=MCCProgrammer_extpulse&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=MCCProgrammer_extpulse)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=MCCProgrammer_extpulse&metric=coverage)](https://sonarcloud.io/summary/new_code?id=MCCProgrammer_extpulse)
 
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
 
-> **Status:** in development. Accounts, publishers, stats, a reviews inbox and alerts (email and Discord) work through the REST API and a server-rendered dashboard, with an opt-in public page and README badges. The daily collection runs on its own. The production setup and automatic deploys are ready; the server is being created.
+**Live at <https://extpulse.mccprogrammer.com>**, in production since October 2026 on a
+free Oracle Cloud VM, deployed from every merge to `main`.
 
 ## Why
 
@@ -15,14 +18,66 @@ extension on the Marketplace and on Open VSX, nobody tells you the total, how ma
 installs you gained this week or that a 1★ review just arrived. ExtPulse saves one
 snapshot per extension, per store, per day, and builds stats and alerts on top.
 
-## Planned (v1)
+## What it does
 
-- Find all extensions of a publisher on the three stores
-- Daily collection at 06:00 (Europe/Lisbon), one snapshot per listing per day
-- Combined totals, daily and weekly gains, split by store
-- One inbox for the reviews of every store
-- Alerts: low ratings, install spikes, new versions, weekly summary
-- Public portfolio page and a combined installs badge for READMEs
+- **Finds a publisher's extensions** on the Marketplace and Open VSX; Chrome extensions
+  are added by their item ID (the store can't be searched by publisher).
+- **Collects every day at 06:00** (Europe/Lisbon): one snapshot per listing, retries with
+  backoff, one request per second per store, and a failing store doesn't stop the others.
+- **Stats:** combined installs across stores, daily and weekly gains, charts over 30, 90
+  or 365 days, through the REST API and a server-rendered dashboard.
+- **One inbox for the reviews of every store**, with unread and unanswered filters.
+- **Alerts** by email or Discord: low ratings, install spikes, new versions, a failing
+  collection and a weekly summary, delivered through an outbox with retries.
+- **A public portfolio page** (opt-in) and SVG installs badges for READMEs.
+
+## Architecture
+
+A modular monolith: one Spring Boot app, one package per feature, and the store
+adapters as the only code that talks to the stores.
+
+```mermaid
+flowchart LR
+    Users((Users)) --> Caddy
+    CI[GitHub Actions] -- "image on GHCR, deploy over SSH" --> App
+    subgraph VM[Oracle Cloud VM]
+        Caddy[Caddy: HTTPS] --> App
+        App["Spring Boot app<br/>store adapters, daily collection, stats,<br/>reviews, alerts outbox, REST API, dashboard"]
+        App --> DB[(PostgreSQL)]
+        Mon[Prometheus, Alertmanager, Grafana] -- scrapes --> App
+        DB --> Backup[pg_dump, rclone]
+    end
+    App -- alerts --> Notify[Email, Discord]
+    Mon -- alerts --> Notify
+    App -- "every day at 06:00" --> Stores[VS Code Marketplace, Open VSX, Chrome Web Store]
+    Backup --> Bucket[(Object Storage)]
+```
+
+## Engineering highlights
+
+- **Tests against recorded store responses:** WireMock serves real, anonymized responses
+  of each store; a weekly workflow runs the same adapters against the live stores to
+  catch changes. Testcontainers runs the database tests on a real PostgreSQL. A JaCoCo
+  gate keeps coverage above 85% of lines.
+- **SQL where it says more:** stats use window functions (`LAG`, `FILTER`, `LATERAL`)
+  with carry-forward for missing days; reviews are upserts that keep when each was
+  first seen.
+- **Security:** two Spring Security chains (stateless JWT for `/api`, session with CSRF
+  and a strict Content Security Policy for the website), BCrypt, the same answer and
+  timing for an unknown email and a wrong password, and Discord webhooks checked
+  against an allow-list (SSRF).
+- **Infrastructure as code at 0 €:** Terraform creates the network, firewall, VM,
+  Object Storage bucket, IAM policies and quotas that refuse anything outside Always
+  Free. Backups go off the server to a bucket the server can write to but not delete
+  from.
+- **CI/CD:** build, tests and coverage gate, an Arm image on GHCR, a secret scan,
+  CodeQL, SonarQube Cloud, Terraform and monitoring checks; a merge to `main` deploys
+  over SSH, waits for the health check and rolls back if it fails.
+- **Observability:** JSON logs with the collection run ID, Micrometer metrics with
+  Prometheus, a Grafana dashboard kept as code, and alert rules with unit tests,
+  delivered to Discord.
+- **Decisions written down:** [19 architecture decision records](docs/decisions), from
+  the Java version to the trusted certificate authorities.
 
 ## Tech stack
 

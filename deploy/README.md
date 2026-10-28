@@ -46,6 +46,25 @@ On the server only, never in the repository:
    docker compose restart alertmanager
    ```
 
+   Alerts set up in the app (low ratings, spikes, the weekly summary) can also go by
+   email, through any SMTP service. With Resend: verify the sending domain, create an
+   API key with sending access, then on the server write the settings and pipe the key
+   from the clipboard on your machine:
+   ```sh
+   cat >> app.env <<'SETTINGS'
+   SPRING_MAIL_HOST=smtp.resend.com
+   SPRING_MAIL_PORT=587
+   SPRING_MAIL_USERNAME=resend
+   SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+   SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED=true
+   EXTPULSE_ALERTS_MAIL_FROM=ExtPulse <alerts@your-domain>
+   SETTINGS
+   chmod 600 app.env
+   # on your machine, with the API key copied:
+   pbpaste | ssh deploy@<ip> 'cd /opt/extpulse && { printf "SPRING_MAIL_PASSWORD="; cat; echo; } >> app.env && ./deploy.sh "$(cat .deployed-tag)"'
+   ```
+   Then send a test from an email alert in the dashboard (Alerts, "Send test").
+
 6. Turn on the copies to Object Storage: the namespace is
    `terraform output -raw backup_namespace` in `infra/oracle`. Then on the server:
    ```sh
