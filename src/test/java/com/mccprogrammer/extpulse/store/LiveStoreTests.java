@@ -54,6 +54,9 @@ class LiveStoreTests {
 		assertThat(stats.installs()).isPositive();
 		assertThat(stats.ratingCount()).isPositive();
 		assertThat(stats.version()).isNotBlank();
+		// AdBlock has written reviews every day, in both configured languages.
+		assertThat(this.chromeWebStore.fetchReviews("gighmmpiobklfepjocnamgkkbiglidom")).hasSizeGreaterThan(10)
+			.allSatisfy((review) -> assertThat(review.rating()).isBetween(1, 5));
 	}
 
 }

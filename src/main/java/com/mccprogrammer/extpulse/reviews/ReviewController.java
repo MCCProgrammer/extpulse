@@ -26,8 +26,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * One inbox for the reviews of every store (the Marketplace and Open VSX; the Chrome Web
- * Store's are not read yet).
+ * One inbox for the reviews of every store: the Marketplace, Open VSX and the Chrome Web
+ * Store.
  */
 @RestController
 class ReviewController {
@@ -44,8 +44,8 @@ class ReviewController {
 	/**
 	 * Your reviews, newest first.
 	 * @param unread only unread (true) or only read (false) reviews
-	 * @param unanswered only Marketplace reviews without your reply (Open VSX has no
-	 * replies)
+	 * @param unanswered only reviews without your reply, on the stores that have replies
+	 * (not Open VSX)
 	 * @param maxRating only reviews with at most this many stars
 	 */
 	@GetMapping("/api/reviews")
@@ -84,7 +84,7 @@ class ReviewController {
 			Instant firstSeenAt) {
 
 		static ReviewResponse of(ReviewRow row) {
-			Boolean replied = (row.store() == Store.VS_MARKETPLACE) ? row.reply() != null : null;
+			Boolean replied = row.store().hasReplies() ? row.reply() != null : null;
 			return new ReviewResponse(row.id(), row.extensionId(), row.extensionName(), row.store(), row.rating(),
 					row.text(), row.author(), row.productVersion(), row.postedAt().toInstant(), row.reply(), replied,
 					row.readAt() != null, row.firstSeenAt().toInstant());

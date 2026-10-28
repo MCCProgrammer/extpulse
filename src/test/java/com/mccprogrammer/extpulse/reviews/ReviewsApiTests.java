@@ -93,6 +93,17 @@ class ReviewsApiTests {
 	}
 
 	@Test
+	void chromeWebStoreReviewsHaveRepliesToo() throws Exception {
+		long chrome = listing(this.markify, "CHROME_WEB_STORE", "kpjlaobgikkhpngdkladodopdkigmdei");
+		this.writer
+			.save(chrome, List.of(review("fa09b0ff-8d4a-4f16-a49f-44ae1928850f", 3, "ok", "2026-06-01T10:00:00Z", null),
+					review("c973bfb1-c5fe-43bd-a50b-e6acf49f3a8c", 5, "love it", "2026-05-15T10:00:00Z", "Thanks!")));
+
+		inbox("?store=CHROME_WEB_STORE").andExpect(jsonPath("$.items[*].replied").value(contains(false, true)));
+		inbox("?unanswered=true").andExpect(jsonPath("$.items[*].text").value(contains("ok", "nice", "great")));
+	}
+
+	@Test
 	void marksReviewsAsReadAndFiltersThem() throws Exception {
 		long newest = this.jdbc.sql("SELECT id FROM reviews ORDER BY posted_at DESC LIMIT 1")
 			.query(Long.class)

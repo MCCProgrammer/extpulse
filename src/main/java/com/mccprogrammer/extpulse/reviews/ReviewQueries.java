@@ -36,7 +36,7 @@ class ReviewQueries {
 				JOIN publishers p ON p.id = e.publisher_id
 				WHERE p.user_id = :user
 				  AND (CAST(:unread AS boolean) IS NULL OR (r.read_at IS NULL) = CAST(:unread AS boolean))
-				  AND (CAST(:unanswered AS boolean) IS NOT TRUE OR (l.store = 'VS_MARKETPLACE' AND r.reply IS NULL))
+				  AND (CAST(:unanswered AS boolean) IS NOT TRUE OR (l.store <> 'OPEN_VSX' AND r.reply IS NULL))
 				  AND (CAST(:maxRating AS integer) IS NULL OR r.rating <= CAST(:maxRating AS integer))
 				  AND (CAST(:store AS text) IS NULL OR l.store = CAST(:store AS text))
 				  AND (CAST(:extension AS bigint) IS NULL OR e.id = CAST(:extension AS bigint))
