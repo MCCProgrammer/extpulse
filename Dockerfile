@@ -15,6 +15,12 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -q -DskipTests package \
 
 # Run: only the JRE and the app, as a user without privileges.
 FROM eclipse-temurin:25-jre-noble
+# Trust the certificate authorities Ubuntu trusts, not the JDK's own list, which lags
+# behind: in October 2026 the JDK still trusted eMudhra's emSign ECC Root CA - G3 after
+# keys under it leaked, while Ubuntu had dropped it. Security updates to the base image
+# then reach the app with the next build.
+RUN trust extract --overwrite --format=java-cacerts --filter=ca-anchors --purpose=server-auth \
+        "$JAVA_HOME/lib/security/cacerts"
 RUN useradd --system --uid 10001 --no-create-home extpulse
 WORKDIR /app
 # One layer per part of the jar, from least to most often changed, so an update to the
