@@ -146,6 +146,10 @@
 					<img th:src="@{/p/{slug}/extensions/{id}/badge.svg(slug=${slug},id=${series.extensionId()})}" alt="Installs badge">
 					<code th:text="'![Installs](' + ${baseUrl} + '/p/' + ${slug} + '/extensions/' + ${series.extensionId()} + '/badge.svg)'">markdown</code>
 				</div>
+				<p class="muted">For a README published on the VS Code Marketplace, which only shows badges from services it
+					knows, the same badge through shields.io:</p>
+				<code
+					th:text="'![Installs](https://img.shields.io/endpoint?url=' + ${#uris.escapeQueryParam(baseUrl + '/p/' + slug + '/extensions/' + series.extensionId() + '/badge.json')} + ')'">markdown</code>
 			</th:block>
 			<p th:if="${slug == null}">Badges need a public page. <a href="/app/settings">Choose its address in Settings.</a></p>
 		</div>

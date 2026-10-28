@@ -10,6 +10,9 @@ final class Badge {
 
 	private static final int PADDING = 6;
 
+	/** The value's color, also given to shields.io for its badges. */
+	static final String COLOR = "256abf";
+
 	private Badge() {
 	}
 
@@ -24,10 +27,11 @@ final class Badge {
 				<title>%2$s</title>\
 				<clipPath id="r"><rect width="%1$d" height="20" rx="3"/></clipPath>\
 				<g clip-path="url(#r)"><rect width="%3$d" height="20" fill="#555"/>\
-				<rect x="%3$d" width="%4$d" height="20" fill="#256abf"/></g>\
+				<rect x="%3$d" width="%4$d" height="20" fill="#%9$s"/></g>\
 				<g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11">\
 				<text x="%5$.1f" y="14">%6$s</text><text x="%7$.1f" y="14">%8$s</text></g></svg>""", width, text,
-				labelWidth, valueWidth, labelWidth / 2.0, escape(label), labelWidth + valueWidth / 2.0, escape(value));
+				labelWidth, valueWidth, labelWidth / 2.0, escape(label), labelWidth + valueWidth / 2.0, escape(value),
+				COLOR);
 	}
 
 	/** 950, 12.3k, 4.5M: the size of a number at a glance. */

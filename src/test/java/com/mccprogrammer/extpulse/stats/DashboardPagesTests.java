@@ -89,6 +89,18 @@ class DashboardPagesTests {
 	}
 
 	@Test
+	void withAPublicPageTheExtensionPageGivesBothBadgeLines() throws Exception {
+		this.jdbc.sql("UPDATE users SET public_slug = 'mccprogrammer'").update();
+
+		this.mvc.perform(get("/app/extensions/{id}", this.extension).session(this.session))
+			.andExpect(content()
+				.string(allOf(containsString("/p/mccprogrammer/extensions/" + this.extension + "/badge.svg)"),
+						containsString(
+								"https://img.shields.io/endpoint?url=http://localhost/p/mccprogrammer/extensions/"
+										+ this.extension + "/badge.json)"))));
+	}
+
+	@Test
 	void onlyTheOfferedRangesAreUsed() throws Exception {
 		this.mvc.perform(get("/app/extensions/{id}", this.extension).param("days", "90").session(this.session))
 			.andExpect(model().attribute("days", 90));
