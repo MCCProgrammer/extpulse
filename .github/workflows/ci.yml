@@ -98,9 +98,9 @@ jobs:
           docker run --rm -v "$PWD":/work -w /work hashicorp/terraform:1.16.5 validate
 
   monitoring:
-    # The monitoring configuration (deploy/): Prometheus' config and alert rules (and their
-    # unit tests), Alertmanager's config and the Grafana dashboard, checked by the tools
-    # that read them.
+    # The server's configuration (deploy/): Prometheus' config and alert rules (and their
+    # unit tests), Alertmanager's config, the Grafana dashboard and the Caddyfile, checked
+    # by the tools that read them.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -115,6 +115,8 @@ jobs:
           docker run --rm -v "$PWD/prometheus":/etc/prometheus --entrypoint promtool "$prometheus" test rules /etc/prometheus/alerts.test.yml
           docker run --rm -v "$PWD/alertmanager":/etc/alertmanager --entrypoint amtool "$alertmanager" check-config /etc/alertmanager/alertmanager.yml
           python3 -m json.tool grafana/dashboards/extpulse.json > /dev/null
+          caddy=$(grep -o 'image: caddy:[^ ]*' compose.yaml | cut -d' ' -f2)
+          docker run --rm -e EXTPULSE_DOMAIN=extpulse.example.com -v "$PWD/caddy":/etc/caddy:ro "$caddy" caddy validate --config /etc/caddy/Caddyfile
 
   image:
     # The production image. Built on an Arm runner, natively, because the server
@@ -243,7 +245,7 @@ jobs:
       - name: Deploy
         run: |
           # The files and folders of deploy/, as one archive over the same SSH connection.
-          tar -C deploy -czf - compose.yaml Caddyfile backup.sh offsite.sh deploy.sh prometheus alertmanager grafana \
+          tar -C deploy -czf - compose.yaml caddy backup.sh offsite.sh deploy.sh prometheus alertmanager grafana \
             | ssh -o StrictHostKeyChecking=yes "deploy@${DEPLOY_HOST}" tar -xzf - -C /opt/extpulse
           ssh -o StrictHostKeyChecking=yes "deploy@${DEPLOY_HOST}" bash /opt/extpulse/deploy.sh "sha-${GITHUB_SHA::7}"
 

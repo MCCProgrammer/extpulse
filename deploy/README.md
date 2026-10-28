@@ -6,7 +6,7 @@ this way: [ADR 0014](../docs/decisions/0014-deploy-and-operations.md).
 | File | What it does |
 | --- | --- |
 | `compose.yaml` | The app, PostgreSQL, Caddy (HTTPS) and the daily backup |
-| `Caddyfile` | HTTPS for the domain, security headers, proxy to the app |
+| `caddy/Caddyfile` | HTTPS for the domain, security headers, proxy to the app |
 | `deploy.sh` | Starts one image tag, waits for it to be healthy, rolls back if not |
 | `backup.sh` | `pg_dump` every day at 03:00 UTC, keeping 14 days |
 | `offsite.sh` | Copies the dumps to Object Storage, off the server, at 03:30 UTC |
