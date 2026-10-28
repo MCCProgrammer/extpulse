@@ -49,3 +49,23 @@ groups:
           severity: warning
         annotations:
           summary: The JVM heap has been over 90% for 15 minutes.
+
+      # The dump runs at 03:00 and the copy at 03:30 every day; 26 hours leaves room.
+      - alert: BackupLate
+        expr: time() - extpulse_backup_newest_dump_timestamp_seconds > 26 * 3600
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: The newest database dump on the server is more than 26 hours old.
+
+      # Also when nothing has been pushed at all: copies off, or the Pushgateway gone.
+      - alert: OffsiteBackupLate
+        expr: >-
+          time() - extpulse_offsite_last_success_timestamp_seconds > 26 * 3600
+          or absent(extpulse_offsite_last_success_timestamp_seconds)
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: No backup has reached Object Storage for more than 26 hours.

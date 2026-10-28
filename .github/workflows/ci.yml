@@ -98,8 +98,9 @@ jobs:
           docker run --rm -v "$PWD":/work -w /work hashicorp/terraform:1.16.5 validate
 
   monitoring:
-    # The monitoring configuration (deploy/): Prometheus' config and alert rules,
-    # Alertmanager's config and the Grafana dashboard, checked by the tools that read them.
+    # The monitoring configuration (deploy/): Prometheus' config and alert rules (and their
+    # unit tests), Alertmanager's config and the Grafana dashboard, checked by the tools
+    # that read them.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -111,6 +112,7 @@ jobs:
           prometheus=$(grep -o 'prom/prometheus:[^ ]*' compose.yaml)
           alertmanager=$(grep -o 'prom/alertmanager:[^ ]*' compose.yaml)
           docker run --rm -v "$PWD/prometheus":/etc/prometheus --entrypoint promtool "$prometheus" check config /etc/prometheus/prometheus.yml
+          docker run --rm -v "$PWD/prometheus":/etc/prometheus --entrypoint promtool "$prometheus" test rules /etc/prometheus/alerts.test.yml
           docker run --rm -v "$PWD/alertmanager":/etc/alertmanager --entrypoint amtool "$alertmanager" check-config /etc/alertmanager/alertmanager.yml
           python3 -m json.tool grafana/dashboards/extpulse.json > /dev/null
 

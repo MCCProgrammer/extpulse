@@ -10,7 +10,7 @@ this way: [ADR 0014](../docs/decisions/0014-deploy-and-operations.md).
 | `deploy.sh` | Starts one image tag, waits for it to be healthy, rolls back if not |
 | `backup.sh` | `pg_dump` every day at 03:00 UTC, keeping 14 days |
 | `offsite.sh` | Copies the dumps to Object Storage, off the server, at 03:30 UTC |
-| `prometheus/` | What Prometheus reads (the app's metrics) and the alert rules |
+| `prometheus/` | What Prometheus reads (the app's metrics, the backup times) and the alert rules, with their tests |
 | `alertmanager/` | Where alerts go: a Discord channel |
 | `grafana/` | Grafana's data source and the ExtPulse dashboard |
 
@@ -100,6 +100,13 @@ rules) and <http://localhost:9093> Alertmanager (alerts firing, silences).
 | AlertDeliveryFailing | The app's own alerts (email, Discord) couldn't be sent |
 | ServerErrors | Server errors (5xx) for 10 minutes |
 | HeapAlmostFull | The JVM heap over 90% for 15 minutes |
+| BackupLate | The newest dump on the server is more than 26 hours old |
+| OffsiteBackupLate | No copy has reached Object Storage for 26 hours (or nothing was pushed) |
+
+The backup jobs run once a night, so they have no endpoint for Prometheus to read:
+`offsite.sh` pushes the time of the newest dump and of the last copy that worked to the
+Pushgateway (`pushgateway`, internal only), which Prometheus reads. To test a change
+to the rules: `promtool test rules prometheus/alerts.test.yml`.
 
 The dashboard is `grafana/dashboards/extpulse.json`: change it there, not in Grafana
 (it is read-only in Grafana and comes back from the file).
