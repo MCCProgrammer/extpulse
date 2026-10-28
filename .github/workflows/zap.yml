@@ -20,7 +20,8 @@ jobs:
 
       - name: Scan https://extpulse.mccprogrammer.com
         run: |
-          mkdir -p zap && cp .zap/rules.tsv zap/ && chmod -R a+rwX zap
+          # ZAP runs as the image's zap user (uid 1000) and writes its reports here.
+          mkdir -p zap && cp .zap/rules.tsv zap/ && sudo chown -R 1000:1000 zap
           # -I: warnings don't fail the run, only the rules marked FAIL.
           docker run --rm -v "$PWD/zap":/zap/wrk:rw ghcr.io/zaproxy/zaproxy:2.17.0 \
             zap-baseline.py -t https://extpulse.mccprogrammer.com -m 2 -c rules.tsv -I \
