@@ -59,8 +59,24 @@ flowchart LR
     Backup --> Bucket[(Object Storage)]
 ```
 
+Inside the app, each feature package is a module. The dependencies between them are
+declared in each `package-info.java` and checked by a test (Spring Modulith): no cycles,
+and nothing beyond the list.
+
+```mermaid
+flowchart BT
+    catalog --> auth & store
+    reviews --> auth & store
+    stats --> auth & catalog & store
+    collection --> catalog & reviews & store
+    alerts --> auth & collection & store
+    publicpage --> auth & stats
+```
+
 ## Engineering highlights
 
+- **Architecture as a test:** Spring Modulith checks that the feature modules form no
+  cycle and use only the modules each one declares.
 - **Tests against recorded store responses:** WireMock serves real, anonymized responses
   of each store; a weekly workflow runs the same adapters against the live stores to
   catch changes. Testcontainers runs the database tests on a real PostgreSQL. A JaCoCo

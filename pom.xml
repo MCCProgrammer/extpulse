@@ -31,6 +31,7 @@
 		<jsoup.version>1.23.2</jsoup.version>
 		<resilience4j.version>2.4.0</resilience4j.version>
 		<springdoc.version>3.1.1</springdoc.version>
+		<spring-modulith.version>2.1.1</spring-modulith.version>
 		<jacoco.version>0.8.15</jacoco.version>
 		<greenmail.version>2.1.14</greenmail.version>
 		<spring-javaformat.version>0.0.48</spring-javaformat.version>
@@ -44,6 +45,17 @@
 		<!-- Tests against the real stores run only in the weekly live-stores workflow. -->
 		<excludedGroups>live</excludedGroups>
 	</properties>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.modulith</groupId>
+				<artifactId>spring-modulith-bom</artifactId>
+				<version>${spring-modulith.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -179,6 +191,17 @@
 			<groupId>org.wiremock</groupId>
 			<artifactId>wiremock-standalone</artifactId>
 			<version>${wiremock.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- @ApplicationModule in each package-info: which modules a module may use. -->
+		<dependency>
+			<groupId>org.springframework.modulith</groupId>
+			<artifactId>spring-modulith-api</artifactId>
+		</dependency>
+		<!-- ModularityTests: checks those rules and that modules form no cycle. -->
+		<dependency>
+			<groupId>org.springframework.modulith</groupId>
+			<artifactId>spring-modulith-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
