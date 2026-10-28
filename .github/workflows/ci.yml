@@ -125,6 +125,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      # Trivy's findings go to Security, Code scanning (from main).
+      security-events: write
     steps:
       - uses: actions/checkout@v7
 
@@ -151,17 +153,60 @@ jobs:
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build (and push from main)
+      - name: Build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           platforms: linux/arm64
-          push: ${{ github.event_name == 'push' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          # Into the runner's Docker, for Trivy to scan before anything is published.
+          load: true
+          tags: extpulse:scan
           # Reuse unchanged layers (the libraries) between runs.
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Trivy reads the image's OS packages and the jars inside it. Only a CRITICAL
+      # vulnerability with a fix, in a library the app brings, fails the build: that one
+      # is ours to fix (a version bump). Everything HIGH or CRITICAL is reported.
+      - name: Scan the image (Trivy) and list its contents (SBOM)
+        run: |
+          trivy() {
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$HOME/.cache/trivy":/root/.cache/trivy \
+              -v "$PWD":/work -w /work aquasec/trivy:0.76.0 image --quiet "$@" extpulse:scan
+          }
+          trivy --format sarif --output trivy.sarif --severity HIGH,CRITICAL
+          trivy --format cyclonedx --output sbom.cdx.json
+          trivy --format table --severity HIGH,CRITICAL
+          trivy --pkg-types library --severity CRITICAL --ignore-unfixed --exit-code 1
+
+      - name: Send the findings to code scanning
+        if: always() && github.event_name == 'push' && hashFiles('trivy.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy.sarif
+          category: trivy
+
+      - name: Keep the SBOM
+        if: always() && hashFiles('sbom.cdx.json') != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: sbom
+          path: sbom.cdx.json
+
+      # From main: the same build again (every layer cached), pushed with an SBOM and
+      # a provenance attestation (how and from which commit it was built) attached to it.
+      - name: Push
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          sbom: true
+          provenance: mode=max
+          cache-from: type=gha
 
   deploy:
     # Pushes to main that built and published an image go to the server: the files in
