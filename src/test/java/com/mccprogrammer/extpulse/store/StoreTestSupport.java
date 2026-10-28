@@ -2,6 +2,7 @@ package com.mccprogrammer.extpulse.store;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.List;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 
@@ -32,7 +33,7 @@ final class StoreTestSupport {
 	/** Every store pointed at the given WireMock server, with short timeouts. */
 	static StoreProperties propertiesFor(WireMockExtension wireMock) {
 		URI url = URI.create(wireMock.baseUrl());
-		return new StoreProperties(url, url, url, Duration.ofSeconds(1), READ_TIMEOUT);
+		return new StoreProperties(url, url, url, Duration.ofSeconds(1), READ_TIMEOUT, List.of("en", "pt"));
 	}
 
 }

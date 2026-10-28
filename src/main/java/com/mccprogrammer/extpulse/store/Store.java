@@ -23,4 +23,11 @@ public enum Store {
 		return this.displayName;
 	}
 
+	/**
+	 * Whether the publisher can reply to reviews on this store (Open VSX has no replies).
+	 */
+	public boolean hasReplies() {
+		return this != OPEN_VSX;
+	}
+
 }

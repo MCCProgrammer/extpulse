@@ -6,15 +6,19 @@ What the real stores answered on 2026-10-26, served by WireMock in the store tes
 | --- | --- |
 | `__files/marketplace/` | `POST https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery` (flags 769); `reviews-*.json`: `GET .../publishers/{publisher}/extensions/{name}/reviews?count=...` |
 | `__files/open-vsx/` | `GET https://open-vsx.org/api/{namespace}` and `/api/{namespace}/{name}`; `reviews-*.json`: `/api/{namespace}/{name}/reviews` |
-| `__files/chrome-web-store/` | `GET https://chromewebstore.google.com/detail/{id}?hl=en` |
+| `__files/chrome-web-store/` | `GET https://chromewebstore.google.com/detail/{id}?hl=en`; `reviews-*.html`: `/detail/{id}/reviews?hl={language}` (recorded 2026-10-28) |
 
 The Chrome Web Store pages had their `<script>`, `<style>` and `<link>` tags removed
 (from about 650 KB to under 130 KB each). The visible text, which is all
-`ChromeWebStoreSource` reads, is unchanged.
+`ChromeWebStoreSource` reads, is unchanged. The reviews pages keep only what it reads
+there: the `<h1>`, the script with `AF_dataServiceRequests` and the reviews'
+`AF_initDataCallback` block (about 800 KB down to under 9 KB).
 
 Review authors are anonymized: Marketplace display names and user IDs became
 "Reviewer 1", "Reviewer 2"... and Open VSX logins became "reviewer1"... (avatars and
-homepages removed); the reviewer's name in the reply was removed too. Ratings, text,
+homepages removed); the reviewer's name in the reply was removed too. Chrome Web Store
+reviewers became "Reviewer 1"... and the developer's name in replies "Developer"
+(avatars removed). Ratings, text,
 dates and versions are as recorded.
 
 When a store changes and the live-stores workflow fails, record the new response
