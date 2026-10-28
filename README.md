@@ -41,7 +41,7 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 | Tests | JUnit 6, Spring Boot Test, Testcontainers, WireMock; JaCoCo coverage gate in CI |
 | Container | Multi-stage Docker image (Temurin 25 JRE, layered, non-root, arm64), published to GitHub Container Registry |
 | Local services | Docker Compose |
-| Infrastructure | Terraform: Oracle Cloud Always Free (network, firewall, an Arm VM with cloud-init, an Object Storage bucket, IAM policies, a budget alert) |
+| Infrastructure | Terraform: Oracle Cloud Always Free (network, firewall, an Arm VM with cloud-init, an Object Storage bucket, IAM policies, quotas that allow only Always Free, a budget alert) |
 | Production | Docker Compose on the VM, Caddy (automatic HTTPS, Let's Encrypt), daily `pg_dump` backups, copied to Object Storage with rclone |
 | Observability | JSON logs (ECS), Micrometer metrics with Prometheus, Grafana dashboard, Alertmanager alerts to Discord |
 | CI/CD | GitHub Actions: build and tests, coverage gate, Arm image, secret scan (gitleaks), deploy over SSH with health check and rollback |
