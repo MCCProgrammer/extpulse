@@ -167,7 +167,10 @@ class StatsApiTests {
 
 	/** Pairs of (days ago, installs). */
 	private void snapshots(long listing, int... daysAgoAndInstalls) {
-		for (int i = 0; i < daysAgoAndInstalls.length; i += 2) {
+		if (daysAgoAndInstalls.length % 2 != 0) {
+			throw new IllegalArgumentException("Expected pairs of (days ago, installs)");
+		}
+		for (int i = 0; i + 1 < daysAgoAndInstalls.length; i += 2) {
 			this.jdbc.sql("INSERT INTO snapshots (listing_id, taken_on, installs) VALUES (:listing, :day, :installs)")
 				.param("listing", listing)
 				.param("day", TODAY.minusDays(daysAgoAndInstalls[i]))
