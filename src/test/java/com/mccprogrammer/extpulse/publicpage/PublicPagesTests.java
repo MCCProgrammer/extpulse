@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -99,6 +100,26 @@ class PublicPagesTests {
 		this.mvc.perform(get("/p/mccprogrammer/extensions/{id}/badge.svg", this.extension))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString(">12.3k<")));
+	}
+
+	@Test
+	void badgesAlsoComeAsJsonForShieldsIo() throws Exception {
+		choose("mccprogrammer");
+
+		this.mvc.perform(get("/p/mccprogrammer/badge.json"))
+			.andExpect(status().isOk())
+			.andExpect(header().string("Content-Type", "application/json"))
+			.andExpect(header().string("Cache-Control", "max-age=3600, public"))
+			.andExpect(jsonPath("$.schemaVersion").value(1))
+			.andExpect(jsonPath("$.label").value("installs"))
+			.andExpect(jsonPath("$.message").value("12.3k"))
+			.andExpect(jsonPath("$.color").value("256abf"))
+			.andExpect(jsonPath("$.cacheSeconds").value(3600));
+		this.mvc.perform(get("/p/mccprogrammer/extensions/{id}/badge.json", this.extension))
+			.andExpect(jsonPath("$.message").value("12.3k"));
+		this.mvc.perform(get("/p/mccprogrammer/extensions/{id}/badge.json", this.extension + 1000))
+			.andExpect(status().isNotFound());
+		this.mvc.perform(get("/p/nobody/badge.json")).andExpect(status().isNotFound());
 	}
 
 	@Test
