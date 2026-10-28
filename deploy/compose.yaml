@@ -92,7 +92,10 @@ services:
     environment:
       EXTPULSE_DOMAIN: ${EXTPULSE_DOMAIN:-extpulse.mccprogrammer.com}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # The folder, not the file: a deploy replaces the Caddyfile with a new file, and a
+      # container keeps seeing the old one through a single-file mount, so the reload
+      # would read the old configuration.
+      - ./caddy:/etc/caddy:ro
       - caddy-data:/data
       - caddy-config:/config
     mem_limit: 128m

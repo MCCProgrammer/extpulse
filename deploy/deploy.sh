@@ -36,8 +36,9 @@ up() {
 	docker compose pull --quiet app
 	docker compose up -d --remove-orphans
 	# Compose recreates a service when its definition changes, not when a mounted file
-	# does: pick up the Caddyfile (a reload, without dropping connections), backup.sh,
-	# offsite.sh and the monitoring configuration.
+	# does: pick up the Caddyfile (a reload, without dropping connections; Caddy mounts its
+	# folder, which shows the new file), backup.sh, offsite.sh and the monitoring
+	# configuration (restarts, which mount the new files).
 	docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile >/dev/null
 	docker compose restart backup offsite prometheus alertmanager grafana >/dev/null
 }
