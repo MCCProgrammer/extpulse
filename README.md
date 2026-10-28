@@ -4,12 +4,18 @@
 [![CodeQL](https://github.com/MCCProgrammer/extpulse/actions/workflows/codeql.yml/badge.svg)](https://github.com/MCCProgrammer/extpulse/actions/workflows/codeql.yml)
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=MCCProgrammer_extpulse&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=MCCProgrammer_extpulse)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=MCCProgrammer_extpulse&metric=coverage)](https://sonarcloud.io/summary/new_code?id=MCCProgrammer_extpulse)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Daily stats, reviews and alerts for VS Code and Chrome extensions, across the
 VS Code Marketplace, Open VSX and the Chrome Web Store.
 
 **Live at <https://extpulse.mccprogrammer.com>**, in production since October 2026 on a
 free Oracle Cloud VM, deployed from every merge to `main`.
+
+It tracks its author's own extensions. This badge is served by ExtPulse and updates
+every day: [![Installs](https://extpulse.mccprogrammer.com/p/mccprogrammer/badge.svg)](https://extpulse.mccprogrammer.com/p/mccprogrammer)
+(the [public page](https://extpulse.mccprogrammer.com/p/mccprogrammer) has them one
+by one).
 
 ## Why
 
@@ -220,3 +226,7 @@ docs/decisions/                architecture decision records
 ```
 
 Each package has a `package-info.java` saying what belongs there.
+
+## License
+
+[MIT](LICENSE).
