@@ -41,7 +41,7 @@ class AuthController {
 	/** The account the token belongs to. */
 	@GetMapping("/api/me")
 	AccountResponse me(@AuthenticationPrincipal Jwt jwt) {
-		return AccountResponse.of(this.accounts.get(Long.parseLong(jwt.getSubject())));
+		return AccountResponse.of(this.accounts.get(AuthenticatedAccount.id(jwt)));
 	}
 
 	record RegisterRequest(@NotBlank @Email @Size(max = 254) String email,
