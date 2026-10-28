@@ -24,3 +24,4 @@ changes gets a new record that replaces the old one.
 | [0016](0016-observability.md) | Observability: JSON logs, Prometheus, Grafana and Alertmanager on the server |
 | [0017](0017-offsite-backups.md) | Backups off the server: Object Storage, write-only for the server |
 | [0018](0018-always-free-quotas.md) | Quotas: the account only creates what Always Free covers |
+| [0019](0019-trusted-certificate-authorities.md) | Trusted certificate authorities follow Ubuntu's list |

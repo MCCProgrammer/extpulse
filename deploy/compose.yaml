@@ -5,6 +5,12 @@
 # "extpulse"), the two would share containers and volumes.
 name: extpulse-production
 
+# The server's list of trusted certificate authorities, kept current by Ubuntu's
+# security updates (unattended-upgrades), for the services that call out over HTTPS.
+# Their images bring their own copy, which lags: in October 2026 it still trusted a root
+# of eMudhra's after keys under it leaked.
+x-ca-certificates: &ca-certificates /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
+
 x-logging: &logging
   # Container logs are kept, but bounded: 5 files of 10 MB per service.
   driver: json-file
@@ -130,6 +136,7 @@ services:
     volumes:
       - ./offsite.sh:/offsite.sh:ro
       - ./backups:/backups:ro
+      - *ca-certificates
     entrypoint: ['sh', '/offsite.sh']
     mem_limit: 128m
     logging: *logging
@@ -162,6 +169,7 @@ services:
     volumes:
       - ./alertmanager:/etc/alertmanager:ro
       - alertmanager-data:/alertmanager
+      - *ca-certificates
     mem_limit: 64m
     logging: *logging
 
@@ -184,6 +192,7 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
+      - *ca-certificates
     mem_limit: 256m
     logging: *logging
 
