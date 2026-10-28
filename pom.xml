@@ -32,6 +32,10 @@
 		<resilience4j.version>2.4.0</resilience4j.version>
 		<springdoc.version>3.1.1</springdoc.version>
 		<spring-modulith.version>2.1.1</spring-modulith.version>
+		<!-- springdoc 3.1.1 brings Swagger UI 5.32.14, whose DOMPurify (3.4.13) has known
+		     vulnerabilities (ZAP flagged it); 5.33.2 updates it to 3.4.16. Drop this once
+		     springdoc brings a newer Swagger UI itself. -->
+		<swagger-ui.version>5.33.2</swagger-ui.version>
 		<jacoco.version>0.8.15</jacoco.version>
 		<greenmail.version>2.1.14</greenmail.version>
 		<spring-javaformat.version>0.0.48</spring-javaformat.version>
@@ -53,6 +57,11 @@
 				<version>${spring-modulith.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.webjars</groupId>
+				<artifactId>swagger-ui</artifactId>
+				<version>${swagger-ui.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

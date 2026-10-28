@@ -21,13 +21,20 @@ import org.springframework.web.server.ResponseStatusException;
  * What anyone can see without signing in: the home page, and for accounts that chose an
  * address, a portfolio page and installs badges. Numbers change once a day, so badges may
  * be cached for an hour (GitHub's image proxy does).
+ * <p>
+ * Each badge also comes as JSON for shields.io's endpoint badges
+ * ({@code https://img.shields.io/endpoint?url=...}). The VS Code Marketplace only shows
+ * badges from services it knows, shields.io among them, so that is the one to put in an
+ * extension's README.
  */
 @Controller
 class PublicPages {
 
 	private static final MediaType SVG = MediaType.valueOf("image/svg+xml");
 
-	private static final CacheControl CACHE = CacheControl.maxAge(Duration.ofHours(1)).cachePublic();
+	private static final Duration CACHE_SECONDS = Duration.ofHours(1);
+
+	private static final CacheControl CACHE = CacheControl.maxAge(CACHE_SECONDS).cachePublic();
 
 	private final PublicProfiles profiles;
 
@@ -62,12 +69,29 @@ class PublicPages {
 	/** Installs of one extension, across the stores it is on. */
 	@GetMapping("/p/{slug}/extensions/{id}/badge.svg")
 	ResponseEntity<String> extensionBadge(@PathVariable String slug, @PathVariable long id) {
-		ExtensionOverview extension = this.stats.overview(owner(slug))
+		return badge(extensionInstalls(slug, id));
+	}
+
+	/** {@link #totalBadge} for shields.io. */
+	@GetMapping("/p/{slug}/badge.json")
+	ResponseEntity<ShieldsBadge> totalShieldsBadge(@PathVariable String slug) {
+		long installs = this.stats.overview(owner(slug)).stream().mapToLong(ExtensionOverview::installs).sum();
+		return shieldsBadge(installs);
+	}
+
+	/** {@link #extensionBadge} for shields.io. */
+	@GetMapping("/p/{slug}/extensions/{id}/badge.json")
+	ResponseEntity<ShieldsBadge> extensionShieldsBadge(@PathVariable String slug, @PathVariable long id) {
+		return shieldsBadge(extensionInstalls(slug, id));
+	}
+
+	private long extensionInstalls(String slug, long id) {
+		return this.stats.overview(owner(slug))
 			.stream()
 			.filter((candidate) -> candidate.id() == id)
 			.findFirst()
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-		return badge(extension.installs());
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND))
+			.installs();
 	}
 
 	private long owner(String slug) {
@@ -79,6 +103,21 @@ class PublicPages {
 			.contentType(SVG)
 			.cacheControl(CACHE)
 			.body(Badge.svg("installs", Badge.compact(installs)));
+	}
+
+	private static ResponseEntity<ShieldsBadge> shieldsBadge(long installs) {
+		return ResponseEntity.ok()
+			.contentType(MediaType.APPLICATION_JSON)
+			.cacheControl(CACHE)
+			.body(new ShieldsBadge(1, "installs", Badge.compact(installs), Badge.COLOR,
+					(int) CACHE_SECONDS.toSeconds()));
+	}
+
+	/**
+	 * shields.io's endpoint schema. {@code cacheSeconds} asks shields.io to keep it as
+	 * long as this site lets anyone cache it.
+	 */
+	record ShieldsBadge(int schemaVersion, String label, String message, String color, int cacheSeconds) {
 	}
 
 }

@@ -92,13 +92,15 @@ flowchart BT
   Object Storage bucket, IAM policies and quotas that refuse anything outside Always
   Free. Backups go off the server to a bucket the server can write to but not delete
   from.
-- **CI/CD:** build, tests and coverage gate, an Arm image on GHCR, a secret scan,
-  CodeQL, SonarQube Cloud, Terraform and monitoring checks; a merge to `main` deploys
-  over SSH, waits for the health check and rolls back if it fails.
+- **CI/CD:** build, tests and coverage gate, an Arm image on GHCR scanned by Trivy and
+  published with an SBOM and provenance, a secret scan, CodeQL, SonarQube Cloud,
+  Terraform and monitoring checks, and a weekly OWASP ZAP scan of the live site; a
+  merge to `main` deploys over SSH, waits for the health check and rolls back if it
+  fails.
 - **Observability:** JSON logs with the collection run ID, Micrometer metrics with
   Prometheus, a Grafana dashboard kept as code, and alert rules with unit tests,
   delivered to Discord.
-- **Decisions written down:** [19 architecture decision records](docs/decisions), from
+- **Decisions written down:** [20 architecture decision records](docs/decisions), from
   the Java version to the trusted certificate authorities.
 
 ## Tech stack
@@ -121,8 +123,8 @@ flowchart BT
 | Infrastructure | Terraform: Oracle Cloud Always Free (network, firewall, an Arm VM with cloud-init, an Object Storage bucket, IAM policies, quotas that allow only Always Free, a budget alert) |
 | Production | Docker Compose on the VM, Caddy (automatic HTTPS, Let's Encrypt), daily `pg_dump` backups, copied to Object Storage with rclone |
 | Observability | JSON logs (ECS), Micrometer metrics with Prometheus, Grafana dashboard, Alertmanager alerts to Discord, Pushgateway for the nightly backup jobs, alert rules unit-tested with promtool |
-| CI/CD | GitHub Actions: build and tests, coverage gate, Arm image, secret scan (gitleaks), deploy over SSH with health check and rollback |
-| Code quality | Spring Java Format (checked in the build), CodeQL, SonarQube Cloud, Dependabot |
+| CI/CD | GitHub Actions: build and tests, coverage gate, Arm image, secret scan (gitleaks), image scan (Trivy) with an SBOM and provenance attestation, deploy over SSH with health check and rollback |
+| Code quality | Spring Java Format (checked in the build), CodeQL, SonarQube Cloud, Dependabot, a weekly OWASP ZAP baseline scan of the live site |
 
 Why each choice was made: [docs/decisions](docs/decisions).
 
