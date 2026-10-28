@@ -133,6 +133,9 @@ services:
       # The bucket is Terraform's; the server isn't allowed to create or change it.
       RCLONE_CONFIG_OFFSITE_NO_CHECK_BUCKET: 'true'
       OFFSITE_BUCKET: extpulse-backups
+      PUSHGATEWAY_URL: http://pushgateway:9091
+    depends_on:
+      - pushgateway
     volumes:
       - ./offsite.sh:/offsite.sh:ro
       - ./backups:/backups:ro
@@ -156,6 +159,20 @@ services:
       - ./prometheus:/etc/prometheus:ro
       - prometheus-data:/prometheus
     mem_limit: 384m
+    logging: *logging
+
+  pushgateway:
+    # Keeps the times the nightly backup jobs push (offsite.sh) until Prometheus reads
+    # them: a job that runs once a day has no endpoint to scrape. Saved to its volume, so
+    # a restart doesn't lose them.
+    image: prom/pushgateway:v1.11.4
+    restart: unless-stopped
+    command:
+      - --persistence.file=/pushgateway/metrics
+      - --persistence.interval=1m
+    volumes:
+      - pushgateway-data:/pushgateway
+    mem_limit: 32m
     logging: *logging
 
   alertmanager:
@@ -201,5 +218,6 @@ volumes:
   caddy-data:
   caddy-config:
   prometheus-data:
+  pushgateway-data:
   alertmanager-data:
   grafana-data:

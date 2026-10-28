@@ -17,3 +17,9 @@ scrape_configs:
     metrics_path: /actuator/prometheus
     static_configs:
       - targets: ['app:8081']
+
+  # The times the nightly backup jobs push; their labels are kept as pushed.
+  - job_name: pushgateway
+    honor_labels: true
+    static_configs:
+      - targets: ['pushgateway:9091']

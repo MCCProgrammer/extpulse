@@ -41,8 +41,10 @@ server: an attacker who can delete the database could otherwise delete its copie
 - Both copies are in the same region and account. Losing the Oracle account itself
   still loses everything; a second provider would cover it, at the cost of a key to
   store.
-- A failed copy shows only in the `offsite` container's log; there is no alert for it
-  yet.
+- A failed copy used to show only in the `offsite` container's log. Since 2026-10-28
+  `offsite.sh` pushes the time of the newest dump and of the last copy that worked to a
+  Pushgateway, and Prometheus alerts when either is more than 26 hours old
+  (`BackupLate`, `OffsiteBackupLate`).
 
 ## Alternatives considered
 
