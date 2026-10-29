@@ -27,6 +27,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -166,6 +167,36 @@ class CatalogApiTests {
 	}
 
 	@Test
+	void removingAnExtensionDeletesItsListingsAndNumbers() throws Exception {
+		long extension = addExtensionNamed("Director's Cut for Letterboxd");
+		stubChromePage(DIRECTORS_CUT, "chrome-web-store/" + DIRECTORS_CUT + ".html");
+		addListing(this.token, extension, "CHROME_WEB_STORE", DIRECTORS_CUT).andExpect(status().isCreated());
+		this.jdbc
+			.sql("INSERT INTO snapshots (listing_id, taken_on, installs) "
+					+ "SELECT id, current_date, 37 FROM listings WHERE extension_id = :extension")
+			.param("extension", extension)
+			.update();
+		long others = count("extensions") - 1;
+
+		removeExtension(this.token, extension).andExpect(status().isNoContent());
+
+		assertThat(count("extensions")).isEqualTo(others);
+		assertThat(countWhere("listings", "extension_id = " + extension)).isZero();
+		assertThat(countWhere("snapshots", "installs = 37")).isZero();
+		removeExtension(this.token, extension).andExpect(status().isNotFound());
+	}
+
+	@Test
+	void anotherAccountCannotRemoveAnExtension() throws Exception {
+		long extension = addExtensionNamed("Director's Cut for Letterboxd");
+		String other = TestAccounts.tokenFor(this.mvc, "someone@example.com");
+
+		removeExtension(other, extension).andExpect(status().isNotFound());
+
+		assertThat(countWhere("extensions", "id = " + extension)).isEqualTo(1);
+	}
+
+	@Test
 	void needsALogin() throws Exception {
 		this.mvc.perform(post("/api/publishers").contentType(MediaType.APPLICATION_JSON).content("{\"name\": \"x\"}"))
 			.andExpect(status().isUnauthorized());
@@ -192,6 +223,10 @@ class CatalogApiTests {
 			.content("{\"name\": \"%s\"}".formatted(name)));
 	}
 
+	private ResultActions removeExtension(String token, long extension) throws Exception {
+		return this.mvc.perform(delete("/api/extensions/" + extension).header("Authorization", "Bearer " + token));
+	}
+
 	private ResultActions addListing(String token, long extension, String store, String externalId) throws Exception {
 		return this.mvc
 			.perform(post("/api/extensions/" + extension + "/listings").header("Authorization", "Bearer " + token)
@@ -216,6 +251,10 @@ class CatalogApiTests {
 	private void stubChromePage(String itemId, String bodyFile) {
 		stores.stubFor(WireMock.get(urlPathEqualTo("/detail/" + itemId))
 			.willReturn(aResponse().withHeader("Content-Type", "text/html; charset=utf-8").withBodyFile(bodyFile)));
+	}
+
+	private long countWhere(String table, String condition) {
+		return this.jdbc.sql("SELECT count(*) FROM " + table + " WHERE " + condition).query(Long.class).single();
 	}
 
 	private long count(String table) {

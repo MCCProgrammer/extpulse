@@ -15,6 +15,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -64,6 +65,19 @@ class CatalogPages {
 			Listing listing = this.catalog.addListing(user.id(), form.extensionId(), form.store(), form.externalId());
 			return "Added " + listing.getExternalId() + " on " + listing.getStore().displayName() + ".";
 		});
+	}
+
+	@PostMapping("/app/catalog/extensions/{id}/remove")
+	String removeExtension(@AuthenticationPrincipal SignedInUser user, @PathVariable long id,
+			RedirectAttributes redirect) {
+		try {
+			redirect.addFlashAttribute("notice",
+					"Removed " + this.catalog.removeExtension(user.id(), id) + " and its history.");
+		}
+		catch (ErrorResponseException ex) {
+			redirect.addFlashAttribute("error", ex.getBody().getDetail());
+		}
+		return "redirect:/app/catalog";
 	}
 
 	/**

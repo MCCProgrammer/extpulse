@@ -158,6 +158,18 @@ public class CatalogService {
 		}
 	}
 
+	/**
+	 * Stops tracking the extension, for example one taken off its store. Its listings,
+	 * snapshots and reviews go with it (the foreign keys cascade); past collection runs
+	 * keep their entries without the listing.
+	 * @return the name it had, to say what was removed
+	 */
+	String removeExtension(long userId, long extensionId) {
+		Extension extension = requireOwnedExtension(userId, extensionId);
+		this.extensions.delete(extension);
+		return extension.getDisplayName();
+	}
+
 	List<Publisher> publishersOf(long userId) {
 		return this.publishers.findByUserIdOrderByName(userId);
 	}
