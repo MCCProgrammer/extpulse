@@ -14,6 +14,7 @@ import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -63,6 +64,13 @@ class CatalogController {
 			@Valid @RequestBody AddListingRequest request) {
 		return ListingResponse
 			.of(this.catalog.addListing(AuthenticatedAccount.id(token), id, request.store(), request.externalId()));
+	}
+
+	/** Stops tracking the extension and deletes its numbers and reviews. */
+	@DeleteMapping("/api/extensions/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void removeExtension(@AuthenticationPrincipal Jwt token, @PathVariable long id) {
+		this.catalog.removeExtension(AuthenticatedAccount.id(token), id);
 	}
 
 	record AddPublisherRequest(@NotBlank @Size(max = 100) @Pattern(regexp = "[A-Za-z0-9][A-Za-z0-9._-]*",

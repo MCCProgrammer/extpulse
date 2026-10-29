@@ -195,6 +195,7 @@ curl "localhost:8080/api/extensions/1/stats?from=2026-10-01&granularity=week" -H
 | POST, GET | `/api/publishers` | Track a publisher on every store; list yours |
 | POST | `/api/extensions` | Add an extension by hand (for Chrome extensions) |
 | POST | `/api/extensions/{id}/listings` | Add a listing by its store ID (for example a Chrome item ID) |
+| DELETE | `/api/extensions/{id}` | Stop tracking an extension and delete its numbers and reviews |
 | GET | `/api/extensions` | Installs today and gain over 7 days, per extension and store |
 | GET | `/api/extensions/{id}/stats` | Installs over time: `from`, `to` (ISO dates), `granularity=day\|week` |
 | GET | `/api/reviews` | Reviews from every store, newest first: `unread`, `unanswered`, `maxRating`, `store`, `extensionId`, `limit`, `offset` |

@@ -24,6 +24,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -121,6 +122,30 @@ class CatalogPagesTests {
 				.session(this.session)
 				.with(csrf()))
 			.andExpect(flash().attribute("notice", "Added " + DIRECTORS_CUT + " on Chrome Web Store."));
+	}
+
+	@Test
+	void anExtensionIsRemovedFromThePage() throws Exception {
+		long publisher = this.jdbc
+			.sql("INSERT INTO publishers (user_id, name) VALUES (:user, 'MCCProgrammer') RETURNING id")
+			.param("user", TestAccounts.idOf(this.jdbc, "miguel@example.com"))
+			.query(Long.class)
+			.single();
+		long extension = this.jdbc.sql(
+				"INSERT INTO extensions (publisher_id, display_name) VALUES (:publisher, 'Unified Inbox') RETURNING id")
+			.param("publisher", publisher)
+			.query(Long.class)
+			.single();
+		this.mvc.perform(get("/app/catalog").session(this.session))
+			.andExpect(content().string(containsString("Remove Unified Inbox")));
+
+		this.mvc.perform(post("/app/catalog/extensions/{id}/remove", extension).session(this.session).with(csrf()))
+			.andExpect(redirectedUrl("/app/catalog"))
+			.andExpect(flash().attribute("notice", "Removed Unified Inbox and its history."));
+		this.mvc.perform(post("/app/catalog/extensions/{id}/remove", extension).session(this.session).with(csrf()))
+			.andExpect(flash().attribute("error", "You have no extension " + extension));
+		this.mvc.perform(get("/app/catalog").session(this.session))
+			.andExpect(content().string(not(containsString("Remove Unified Inbox"))));
 	}
 
 	@Test

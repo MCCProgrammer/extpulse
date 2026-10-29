@@ -351,6 +351,11 @@ button.secondary,
 	border-color: var(--axis);
 }
 
+button.danger {
+	background: var(--bad);
+	color: #fff;
+}
+
 button.link {
 	background: none;
 	border: 0;
@@ -553,6 +558,24 @@ button.link:hover {
 
 .chart .hit:hover .column {
 	opacity: 0.8;
+}
+
+.removable {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.removable li + li {
+	border-top: 1px solid var(--axis);
+}
+
+.removable li {
+	padding: 6px 0;
+}
+
+.removable details summary {
+	margin: 4px 0;
 }
 
 details summary {

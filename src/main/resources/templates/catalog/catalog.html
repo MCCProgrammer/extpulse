@@ -71,6 +71,25 @@
 			</div>
 		</div>
 		<p class="card muted" th:if="${publishers.isEmpty()}">Add a publisher first.</p>
+
+		<th:block th:unless="${extensions.isEmpty()}">
+			<h2>Your extensions</h2>
+			<p class="muted">Remove one you no longer track, for example after taking it off its store.</p>
+			<div class="card">
+				<ul class="removable">
+					<li th:each="extension : ${extensions}">
+						<span th:text="${extension.displayName}">extension</span>
+						<details>
+							<summary>Remove</summary>
+							<p class="muted">Deletes its listings, numbers and reviews. This can't be undone.</p>
+							<form method="post" th:action="@{/app/catalog/extensions/{id}/remove(id=${extension.id})}">
+								<button type="submit" class="danger" th:text="'Remove ' + ${extension.displayName}">Remove</button>
+							</form>
+						</details>
+					</li>
+				</ul>
+			</div>
+		</th:block>
 	</main>
 	<footer th:replace="~{fragments :: footer}"></footer>
 </body>
