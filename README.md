@@ -35,7 +35,8 @@ snapshot per extension, per store, per day, and builds stats and alerts on top.
 - **One inbox for the reviews of every store**, with unread and unanswered filters.
 - **Alerts** by email or Discord: low ratings, install spikes, new versions, a failing
   collection and a weekly summary, delivered through an outbox with retries.
-- **A public portfolio page** (opt-in) and SVG installs badges for READMEs.
+- **A public portfolio page** (opt-in), SVG installs badges for READMEs, and the exact
+  numbers as JSON (`/p/<address>/installs.json`) that any website can read.
 
 ## Architecture
 

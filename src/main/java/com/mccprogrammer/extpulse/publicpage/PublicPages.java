@@ -8,6 +8,7 @@ import com.mccprogrammer.extpulse.stats.StatsService;
 import com.mccprogrammer.extpulse.stats.StatsService.ExtensionOverview;
 
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,9 @@ import org.springframework.web.server.ResponseStatusException;
  * ({@code https://img.shields.io/endpoint?url=...}). The VS Code Marketplace only shows
  * badges from services it knows, shields.io among them, so that is the one to put in an
  * extension's README.
+ * <p>
+ * The exact numbers also come as JSON that any website may read from the browser, so a
+ * portfolio can show live installs in its own style.
  */
 @Controller
 class PublicPages {
@@ -35,6 +39,9 @@ class PublicPages {
 	private static final Duration CACHE_SECONDS = Duration.ofHours(1);
 
 	private static final CacheControl CACHE = CacheControl.maxAge(CACHE_SECONDS).cachePublic();
+
+	// Public, read-only and without cookies, so any origin may read it.
+	private static final String ANY_ORIGIN = "*";
 
 	private final PublicProfiles profiles;
 
@@ -85,6 +92,20 @@ class PublicPages {
 		return shieldsBadge(extensionInstalls(slug, id));
 	}
 
+	/** Installs of the page's extensions and their total, as exact numbers. */
+	@GetMapping("/p/{slug}/installs.json")
+	ResponseEntity<PublicInstalls> installs(@PathVariable String slug) {
+		List<ExtensionOverview> extensions = this.stats.overview(owner(slug));
+		List<ExtensionInstalls> each = extensions.stream()
+			.map((extension) -> new ExtensionInstalls(extension.id(), extension.displayName(), extension.installs()))
+			.toList();
+		return ResponseEntity.ok()
+			.contentType(MediaType.APPLICATION_JSON)
+			.cacheControl(CACHE)
+			.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ANY_ORIGIN)
+			.body(new PublicInstalls(each.stream().mapToLong(ExtensionInstalls::installs).sum(), each));
+	}
+
 	private long extensionInstalls(String slug, long id) {
 		return this.stats.overview(owner(slug))
 			.stream()
@@ -118,6 +139,12 @@ class PublicPages {
 	 * long as this site lets anyone cache it.
 	 */
 	record ShieldsBadge(int schemaVersion, String label, String message, String color, int cacheSeconds) {
+	}
+
+	record PublicInstalls(long installs, List<ExtensionInstalls> extensions) {
+	}
+
+	record ExtensionInstalls(long id, String name, long installs) {
 	}
 
 }

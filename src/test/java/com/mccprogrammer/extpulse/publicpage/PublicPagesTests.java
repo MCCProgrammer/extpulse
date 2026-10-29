@@ -123,6 +123,22 @@ class PublicPagesTests {
 	}
 
 	@Test
+	void exactInstallsComeAsJsonThatAnyWebsiteMayRead() throws Exception {
+		this.mvc.perform(get("/p/mccprogrammer/installs.json")).andExpect(status().isNotFound());
+		choose("mccprogrammer");
+
+		this.mvc.perform(get("/p/mccprogrammer/installs.json"))
+			.andExpect(status().isOk())
+			.andExpect(header().string("Access-Control-Allow-Origin", "*"))
+			.andExpect(header().string("Cache-Control", "max-age=3600, public"))
+			.andExpect(jsonPath("$.installs").value(12_345))
+			.andExpect(jsonPath("$.extensions[0].id").value(this.extension))
+			.andExpect(jsonPath("$.extensions[0].name").value("Diff Checker"))
+			.andExpect(jsonPath("$.extensions[0].installs").value(12_345))
+			.andExpect(content().string(not(containsString("miguel@example.com"))));
+	}
+
+	@Test
 	void anotherAccountsExtensionHasNoBadgeOnThisPage() throws Exception {
 		choose("mccprogrammer");
 		this.mvc.perform(get("/p/mccprogrammer/extensions/{id}/badge.svg", this.extension + 1000))
