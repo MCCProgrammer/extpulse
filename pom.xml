@@ -30,14 +30,14 @@
 		<java.version>25</java.version>
 		<jsoup.version>1.23.2</jsoup.version>
 		<resilience4j.version>2.4.0</resilience4j.version>
-		<springdoc.version>3.1.1</springdoc.version>
-		<spring-modulith.version>2.1.1</spring-modulith.version>
+		<springdoc.version>3.2.0</springdoc.version>
+		<spring-modulith.version>2.1.2</spring-modulith.version>
 		<!-- springdoc 3.1.1 brings Swagger UI 5.32.14, whose DOMPurify (3.4.13) has known
 		     vulnerabilities (ZAP flagged it); 5.33.2 updates it to 3.4.16. Drop this once
 		     springdoc brings a newer Swagger UI itself. -->
-		<swagger-ui.version>5.33.2</swagger-ui.version>
-		<jacoco.version>0.8.15</jacoco.version>
-		<greenmail.version>2.1.14</greenmail.version>
+		<swagger-ui.version>5.34.0</swagger-ui.version>
+		<jacoco.version>0.8.16</jacoco.version>
+		<greenmail.version>2.1.15</greenmail.version>
 		<spring-javaformat.version>0.0.48</spring-javaformat.version>
 		<sonar-maven-plugin.version>5.8.0.7211</sonar-maven-plugin.version>
 		<!-- SonarQube Cloud (sonarcloud.io): CI runs the analysis when SONAR_TOKEN is set. -->
