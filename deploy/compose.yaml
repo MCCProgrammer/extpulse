@@ -168,7 +168,7 @@ services:
     # Keeps the times the nightly backup jobs push (offsite.sh) until Prometheus reads
     # them: a job that runs once a day has no endpoint to scrape. Saved to its volume, so
     # a restart doesn't lose them.
-    image: prom/pushgateway:v1.11.4
+    image: prom/pushgateway:v1.11.5
     restart: unless-stopped
     command:
       - --persistence.file=/pushgateway/metrics
