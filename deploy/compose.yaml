@@ -82,7 +82,7 @@ services:
 
   caddy:
     # HTTPS with certificates from Let's Encrypt, obtained and renewed by Caddy.
-    image: caddy:2.11.7-alpine
+    image: caddy:2.11.9-alpine
     restart: unless-stopped
     depends_on:
       - app
